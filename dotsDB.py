@@ -3,7 +3,94 @@ import pandas as pd
 
 
 def wrap_norm_coord(to_wrap):
+    """
+    if to_wrap is not in [0,1), wraps it around
+    :param to_wrap: a number
+    :return: decimal part of the number
+    """
     return np.mod(to_wrap, 1)
+
+
+def point_to_pixel(coord, grid_dims):
+    """
+    converts the coordinates of a dot from normalized space to pixel space
+    :param coord: ndarray of length 2 with double entries representing normalized coordinates of a dot
+    :param grid_dims: ndarray of length 2 with integer entries, e.g. np.array((3,2)) for a 3 x 2 grid
+    :return: ndarray of length 2 and entries of type np.intp
+    """
+    px_indices = np.floor(grid_dims * coord)
+    return px_indices.astype(np.intp)
+
+
+def pixel_to_patch(px_idxs, patch_dims, grid_dims):
+    """
+    Converts the coords of the center of a dot in pixel space into a patch of pixels.
+    A patch is completely determined by the position of its top left corner and its dimensions.
+    Even vs. odd values of the entries of patch_dims are treated differently.
+    Parts of patch falling outside the grid are truncated.
+    Right now, only square grids and square patches are handled.
+    :param px_idxs: pixel coordinates of a dot
+    :param patch_dims: 2-tuple containing height and width of patch in pixels
+    :param grid_dims: height and width of pixel grid
+    :return: top left corner of patch and its dims.
+    """
+    h = patch_dims[0]  # patch height in px
+    w = patch_dims[1]
+    if h == w and grid_dims[0] == grid_dims[1]:  # if patch and grid have square shape
+        max_px_idx = grid_dims[1] - 1
+        if np.mod(h, 2):  # if patch height is an odd number of pixels
+            pxs_to_padd = (h - 1) / 2
+
+            top_left_corner = px_idxs - pxs_to_padd
+            top_left_corner[top_left_corner < 0] = 0
+
+            bottom_right_corner = px_idxs + pxs_to_padd
+            bottom_right_corner[bottom_right_corner > max_px_idx] = max_px_idx
+
+            new_patch_dims = bottom_right_corner - top_left_corner + 1
+        else:
+            pxs_to_padd_top = (h / 2) - 1
+            pxs_to_padd_bottom = pxs_to_padd_top + 1
+            pxs_to_padd_left = pxs_to_padd_top
+            pxs_to_padd_right = pxs_to_padd_bottom
+
+            top_left_corner = px_idxs - np.array([pxs_to_padd_top, pxs_to_padd_left])
+            top_left_corner[top_left_corner < 0] = 0
+
+            bottom_right_corner = px_idxs + np.array([pxs_to_padd_bottom, pxs_to_padd_right])
+            bottom_right_corner[bottom_right_corner > max_px_idx] = max_px_idx
+
+            new_patch_dims = bottom_right_corner - top_left_corner + 1
+
+    return top_left_corner.astype(np.intp), new_patch_dims.astype(np.intp)
+
+
+def set_patch(patch_top_left_corner, patch_dims, grid, value=True):
+    """
+    Sets the values in grid that correspond to the patch location to True
+    :param patch_top_left_corner: pixel coordinates of top corner of patch
+    :param patch_dims: 2-ndarray in pixels (dtype is np.intp)
+    :param grid: 2D ndarray
+    :param value: value to what pixels should be set
+    :return:
+    """
+    x = patch_top_left_corner[0]
+    y = patch_top_left_corner[1]
+    x_end = x + patch_dims[0]
+    y_end = y + patch_dims[1]
+
+    grid[x:x_end, y:y_end] = value
+
+    return None
+
+
+def flaten_pixel_frame(f):
+    """
+    a 2D pixel frame is flattened, whereby rows are concatenated
+    :param f: 2D ndarray of boolean values representing a pixel frame
+    :return: 1D ndarray of boolean values
+    """
+    return f.reshape(f.size)
 
 
 class DotsStimulus:
@@ -12,7 +99,20 @@ class DotsStimulus:
     frame_rate = 60  # should be a multiple of 10
     field_scale = 1.1
 
-    def __init__(self, speed, density, coh_mean, coh_stdev, direction, num_frames, diameter):
+    def __init__(self, speed, density, coh_mean, coh_stdev, direction, num_frames, diameter,
+                 stencil_radius_in_vis_angle=None,
+                 pixels_per_degree=55.4612,
+                 dot_size_in_pxs=4):
+        """
+        :param speed:
+        :param density:
+        :param coh_mean: between 0 and 100, mean percentage of coherently moving dots
+        :param coh_stdev: stdev of percentage of coherently moving dots
+        :param direction: 'right' or 'left'
+        :param num_frames: number of frames for stimulus
+        :param diameter: in deg vis angle
+        :param stencil_radius_in_vis_angle: defaults to diameter / 2
+        """
         self.speed = speed
 
         # controls total number of dots across self.interleaves frames
@@ -27,6 +127,12 @@ class DotsStimulus:
 
         # diameter of region on screen in degrees of visual angle, in which dots appear
         self.diameter = diameter
+
+        if stencil_radius_in_vis_angle is None:
+            self.stencil_radius_in_vis_angle = self.diameter / 2
+        else:
+            self.stencil_radius_in_vis_angle = stencil_radius_in_vis_angle
+        self.stencil_radius_in_norm_units = self.stencil_radius_in_vis_angle / self.diameter
 
         # actual width of field in screen in which dots are drawn.
         # in theory, a dot outside of the allowed stimulus region is invisible,
@@ -56,7 +162,10 @@ class DotsStimulus:
         # for idx in range(self.num_dots_in_chunk % self.interleaves):
         #     self.num_dots_in_frames[idx] += 1
 
-    def normalized_dots_frame_generator(self):
+        self.pixels_per_degree = pixels_per_degree
+        self.dot_size_in_pxs = dot_size_in_pxs
+
+    def normalized_dots_frame_generator(self, max_frames=None):
         """
         a frame itself is a numpy array with N rows and 2 columns.
         each row corresponds to a dot, col 1 corresponds to the horizontal
@@ -64,14 +173,16 @@ class DotsStimulus:
         So, (0,0) is the top left corner; (.99, .99) is the bottom right corner;
         (0,.5) is a dot positioned at the top row and midway between left and right.
         Note that 1 is not an allowed coordinate, only values in [0,1) are.
-
+        :param max_frames: max number of frames to generate (defaults to self.num_frames)
         :return: generator object. Yields a 'successor' frame on each iteration.
         First frame is randomly generated
         """
+        if max_frames is None:
+            max_frames = self.num_frames
         frame_count = 0
         lifetimes = np.zeros(self.num_dots_in_chunk.astype(int))
         frame_chunk = [np.random.rand(self.num_dots_in_frames[n], 2) for n in range(self.interleaves)]
-        while frame_count < self.num_frames:
+        while frame_count < max_frames:
             mod_idx = np.mod(frame_count, self.interleaves)
             ancestor = frame_chunk[mod_idx]
             new_frame, updated_lifetimes = self.next_frame(ancestor, lifetimes[self.dots_idxs[mod_idx]])
@@ -153,40 +264,22 @@ class DotsStimulus:
 
         return successor_frame, new_life_times
 
+    def norm_to_pixel_frame(self, normalized_frame):
+        """
+        takes a normalized frame of dots as input and returns a pixel frame
+        :param normalized_frame: num_dots x 2 ndarray of doubles
+        :return: pixel frame represented as an num_pixels x num_pixels ndarray with boolean entries
+        """
+        # create square grid of pixels and define dimensions of dot in pixel space
+        grid_size = np.floor(self.pixels_per_degree * self.field_width).astype(int)
+        grid = np.full((grid_size, grid_size), False)  # array of boolean values representing pixels
+        patch_shape = (self.dot_size_in_pxs, self.dot_size_in_pxs)
 
-# class DotsFrame:
-#     def __init__(self, param_dict):
-#         self.num_dots = param_dict['num_dots']
-#         self.num_pixels = param_dict['num_pixels']
-#         self.pixel_width_of_a_dot = param_dict['pixel_width_of_a_dot']
-#         self.pixel_matrix_dims = (round(np.sqrt(self.num_pixels)).astype(int),
-#                                   round(np.sqrt(self.num_pixels)).astype(int))
-#         self.normalized_representation, self.pixel_representation = self._generate()
-#
-#     def display(self):
-#         print(self.normalized_representation)
-#         print(self.pixel_representation)
-#
-#     def _generate(self, ancestor=None, method='standard'):
-#         if ancestor is None:
-#             random_coordinates = np.random.rand(self.num_dots, 2)
-#             normalized_representation = [NormDot(row[0], row[1]) for row in random_coordinates]
-#             print(np.round(normalized_representation, 2))
-#         active_pixel_indices = normalized_representation * self.pixel_matrix_dims[0]
-#         active_pixel_indices[active_pixel_indices > self.pixel_width_of_a_dot / 2] -= self.pixel_width_of_a_dot / 2
-#         active_pixel_indices = np.floor(active_pixel_indices).astype(np.intp)
-#         print(active_pixel_indices)
-#         pixel_representation = np.zeros(self.pixel_matrix_dims)
-#         pixel_representation[active_pixel_indices] = 1
-#         print(pixel_representation)
-#         pixel_representation = ndimage.maximum_filter(pixel_representation, size=self.pixel_width_of_a_dot)
-#         return normalized_representation, pixel_representation
-#
-#
-# if __name__ == '__main__':
-#     # set parameters
-#     params = {
-#         'num_dots': 2,
-#         'num_pixels': 16,
-#         'pixel_width_of_a_dot': 1
-#     }
+        # loop over dots and set the corresponding pixels to True
+        for point in normalized_frame:
+            # if dot falls outside visible region (stencil), do not draw it
+            if np.sum((point-0.5)**2) <= self.stencil_radius_in_norm_units**2:
+                pt_coord_in_pxs = point_to_pixel(point, grid.shape)
+                corner, dims = pixel_to_patch(pt_coord_in_pxs,  patch_shape, grid.shape)
+                set_patch(corner, dims, grid)
+        return grid
