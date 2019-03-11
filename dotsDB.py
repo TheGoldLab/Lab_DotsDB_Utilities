@@ -1,5 +1,18 @@
 import numpy as np
 import pandas as pd
+import h5py
+import time
+import sys
+
+
+"""
+REMARKS:
+the way DotsStimulus.coh_step is currently computed does not account 
+correctly for DotsStimulus.field_width
+This is intentional, to match the 'bug' in the MATLAB code...
+"""
+
+"""--------------------- DISPLAY FUNCTIONS ------------------------"""
 
 
 def wrap_norm_coord(to_wrap):
@@ -84,7 +97,7 @@ def set_patch(patch_top_left_corner, patch_dims, grid, value=True):
     return None
 
 
-def flaten_pixel_frame(f):
+def flatten_pixel_frame(f):
     """
     a 2D pixel frame is flattened, whereby rows are concatenated
     :param f: 2D ndarray of boolean values representing a pixel frame
@@ -93,13 +106,23 @@ def flaten_pixel_frame(f):
     return f.reshape(f.size)
 
 
+"""--------------------- STIMULUS CLASS ------------------------"""
+
+
 class DotsStimulus:
     interleaves = 3
     limit_life_time = True
     frame_rate = 60  # should be a multiple of 10
     field_scale = 1.1
 
-    def __init__(self, speed, density, coh_mean, coh_stdev, direction, num_frames, diameter,
+    def __init__(self,
+                 speed,
+                 density,
+                 coh_mean,
+                 coh_stdev,
+                 direction,
+                 num_frames,
+                 diameter,
                  stencil_radius_in_vis_angle=None,
                  pixels_per_degree=55.4612,
                  dot_size_in_pxs=4):
@@ -139,10 +162,16 @@ class DotsStimulus:
         # but this is not yet implemented...
         self.field_width = self.diameter * self.field_scale
 
+        # some useful pixel dimensions
+        self.pixels_per_degree = pixels_per_degree
+        self.dot_size_in_pxs = dot_size_in_pxs
+        self.frame_width_in_pxs = np.floor(self.pixels_per_degree * self.field_width).astype(int)
+
         # step size for coherent dots displacement (displacement is applied every self.interleaves frame)
         self.coh_step = self.speed / self.diameter * (self.interleaves / self.frame_rate)
         # set negative step if direction of motion is left
-        if direction == 'left':
+        self.direction = direction
+        if self.direction == 'left':
             self.coh_step = - self.coh_step
 
         # total number of dots across self.interleaves frames
@@ -162,8 +191,24 @@ class DotsStimulus:
         # for idx in range(self.num_dots_in_chunk % self.interleaves):
         #     self.num_dots_in_frames[idx] += 1
 
-        self.pixels_per_degree = pixels_per_degree
-        self.dot_size_in_pxs = dot_size_in_pxs
+    def export_params(self):
+        return {
+            'interleaves': self.interleaves,
+            'limit_life_time': self.limit_life_time,
+            'frame_rate': self.frame_rate,
+            'field_scale': self.field_scale,
+            'speed': self.speed,
+            'density': self.density,
+            'coh_mean': self.coh_mean,
+            'coh_stdev': self.coh_stdev,
+            'direction': self.direction,
+            'num_frames': self.num_frames,
+            'diameter': self.diameter,
+            'stencil_radius_in_vis_angle': self.stencil_radius_in_vis_angle,
+            'pixels_per_degree': self.pixels_per_degree,
+            'dot_size_in_pxs': self.dot_size_in_pxs,
+            'frame_width_in_pxs': self.frame_width_in_pxs
+        }
 
     def normalized_dots_frame_generator(self, max_frames=None):
         """
@@ -205,12 +250,12 @@ class DotsStimulus:
         num_dots = present_frame.shape[0]
 
         # select coherence stochastically, and cap at 100% max
-        coh = np.abs(np.random.normal(self.coh_mean, self.coh_stdev))
-        if coh > 100:
-            coh = 100
+        coherence = np.abs(np.random.normal(self.coh_mean, self.coh_stdev))
+        if coherence > 100:
+            coherence = 100
 
         # select number of coherent dots in this frame stochastically
-        num_coh_dots = np.random.binomial(num_dots, coh / 100)
+        num_coh_dots = np.random.binomial(num_dots, coherence / 100)
 
         if self.limit_life_time:
             # easier to use pandas for manipulations to come
@@ -271,7 +316,7 @@ class DotsStimulus:
         :return: pixel frame represented as an num_pixels x num_pixels ndarray with boolean entries
         """
         # create square grid of pixels and define dimensions of dot in pixel space
-        grid_size = np.floor(self.pixels_per_degree * self.field_width).astype(int)
+        grid_size = self.frame_width_in_pxs
         grid = np.full((grid_size, grid_size), False)  # array of boolean values representing pixels
         patch_shape = (self.dot_size_in_pxs, self.dot_size_in_pxs)
 
@@ -283,3 +328,322 @@ class DotsStimulus:
                 corner, dims = pixel_to_patch(pt_coord_in_pxs,  patch_shape, grid.shape)
                 set_patch(corner, dims, grid)
         return grid
+
+
+"""----------------------- DB FUNCTIONS ------------------------"""
+
+
+def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, hold_stim_in_mem=True):
+    """
+
+    :param stim: a freshly created instance of DotsStimulus
+    :param num_of_trials: number of trials to generate
+    :param filename:
+    :param create_file:
+    :param hold_stim_in_mem:
+    :return:
+    """
+    stim_params = stim.export_params()
+
+    if create_file:
+        f = h5py.File(filename, 'x')  # this fails if file exists already
+
+    # create group corresponding to parameters
+    group_name = build_group_name(stim)
+    group = f.create_group(group_name)
+    # and add all parameters as attributes
+    for k, v in stim_params.items():
+        group.attrs.__setitem__(k, v)
+
+    if hold_stim_in_mem:
+        # generate stimulus upfront
+        num_pxs = (stim_params['frame_width_in_pxs']**2) * stim_params['num_frames']
+        all_data = np.zeros((num_of_trials, num_pxs), dtype=np.bool)
+        for t in range(num_of_trials):
+            frames_seq = [flatten_pixel_frame(
+                stim.norm_to_pixel_frame(fr)
+                ) for fr in list(stim.normalized_dots_frame_generator())]
+            all_data[t, :] = np.concatenate(frames_seq, axis=None)
+
+        # and write it
+        group.create_dataset("px",
+                             data=all_data,
+                             maxshape=(None, num_pxs),
+                             compression="gzip",
+                             compression_opts=9,
+                             fletcher32=True)
+    f.flush()
+    f.close()
+    return None
+
+
+def inspect_db(filename, groupname, dsetname):
+    """
+    displays attributes of the group, and the shape of the dataset
+    :param filename:
+    :param groupname:
+    :param dsetname:
+    :return:
+    """
+    f = h5py.File(filename, 'r')
+    g = f[groupname]
+    stim = g[dsetname]
+    print(f'dset {dsetname} has shape: {stim.shape}\nattributes of group {groupname} are:')
+    for k, v in g.attrs.items():
+        print(k, v)
+#
+# def create_hdf5_data_structure(hdf5file, groupname, num_trials, num_samples, max_trials=1000000):
+#     """
+#     :param hdf5file: h5py.File
+#     :param groupname:
+#     :param num_trials: nb of trials
+#     :param max_trials: for db decision datasets max nb of rows
+#     :param num_samples: for db decision datasets; nb of cols
+#     :return: created group
+#     """
+#     group = hdf5file.create_group(groupname)
+#     dt = h5py.special_dtype(vlen=np.dtype('f'))
+#     group.create_dataset('trials', (num_trials, 3), maxshape=(max_trials, 10), dtype=dt)
+#     group.create_dataset('trial_info', (num_trials, 3), maxshape=(max_trials, 10), dtype='f')
+#     group.create_dataset('decision_lin', (num_trials, num_samples), dtype='i', maxshape=(max_trials, num_samples))
+#     group.create_dataset('decision_nonlin', (num_trials, num_samples),
+#                          dtype='i', maxshape=(max_trials, num_samples))
+#     return group
+#
+#
+# def populate_hdf5_db(fname, four_par, num_of_trials, number_of_samples=1):
+#     """
+#     Generate stimulus data and store as hdf5 file.
+#     This is the main function called by this script.
+#     """
+#     # open/create file
+#     f = h5py.File(fname, 'a')
+#     ll, lh, h, t = four_par
+#
+#     # create group corresponding to parameters
+#     group_name = build_group_name(four_par)
+#
+#     if group_name in f:  # if dataset already exists, exit without doing anything
+#         print('data already present, file left untouched')
+#     else:  # if dataset doesn't exist, create it
+#         print('creating dataset with group name {}'.format(group_name))
+#         grp = create_hdf5_data_structure(f, group_name, num_of_trials, num_samples=number_of_samples)
+#
+#         # create trials dataset
+#         trials_data = grp['trials']
+#         # get row indices of new data to insert
+#         row_indices = np.r_[:num_of_trials]
+#
+#         # create info on data
+#         info_data = grp['trial_info']  # info dataset
+#         info_data.attrs['h'] = h
+#         info_data.attrs['T'] = t
+#         info_data.attrs['low_click_rate'] = ll
+#         info_data.attrs['high_click_rate'] = lh
+#         info_data.attrs['S'] = (lh - ll) / np.sqrt(ll + lh)
+#         data_version = 1  # version number of new data to insert
+#
+#     # populate database
+#     for row_idx in row_indices:
+#         # vector of CP times
+#         cptimes = gen_cp(t, h)
+#         trials_data[row_idx, 2] = cptimes
+#
+#         # stimulus (left clicks, right clicks)
+#         (left_clicks, right_clicks), init_state, end_state = gen_stim(cptimes, ll, lh, t)
+#         trials_data[row_idx, :2] = left_clicks, right_clicks
+#
+#         # populate info dataset
+#         info_data[row_idx, :] = init_state, end_state, data_version
+#
+#     info_data.attrs['last_version'] = data_version
+#     f.flush()
+#     f.close()
+#
+#
+# def dump_info(four_parameters, s, nt, nruns):
+#     print('S value: {}'.format(s))
+#     print('low click rate: {}'.format(four_parameters[0]))
+#     print('high click rate: {}'.format(four_parameters[1]))
+#     print('hazard rate: {}'.format(four_parameters[2]))
+#     print('interr. time: {}'.format(four_parameters[3]))
+#     print('nb of trials / hist: {}'.format(nruns))
+#     print('nb of trials in sequence: {}'.format(nt))
+
+
+def build_group_name(stimulus):
+    """
+    :param stimulus: a DotsStimulus object
+    :return: string
+    """
+    params = stimulus.export_params()
+    abbrev = {
+        'interleaves': 'intlv',
+        'limit_life_time': 'lft',
+        'frame_rate': 'fr',
+        'field_scale': 'fs',
+        'speed': 'sp',
+        'density': 'ds',
+        'coh_mean': 'c',
+        'coh_stdev': 'cs',
+        'direction': 'd',
+        'num_frames': 'nf',
+        'diameter': 'dm',
+        'stencil_radius_in_vis_angle': 'sc',
+        'pixels_per_degree': 'ppd',
+        'dot_size_in_pxs': 'dts',
+        'frame_width_in_pxs': 'fw'
+    }
+    return '_'.join(['%s%s' % (abbrev[key], value) for (key, value) in params.items()])
+
+#
+# def update_linear_decision_data(file_name, group_name, num_samples, sample_range, create_nonlin_db=False):
+#     """
+#     :param file_name: file name (string)
+#     :param group_name: group object from h5py module
+#     :param num_samples:
+#     :param sample_range: (starting value, ending value)
+#     :param create_nonlin_db:
+#     :return:
+#     """
+#     f = h5py.File(file_name, 'r+')
+#     group = f[group_name]
+#     info_dset = group['trial_info']
+#     trials_dset = group['trials']
+#     num_trials = trials_dset.shape[0]
+#     row_indices = range(num_trials)
+#     dset_name = 'decision_lin'
+#     if create_nonlin_db:
+#         # create dataset for nonlinear decisions
+#         group.create_dataset('decision_nonlin', (num_trials, num_samples),
+#                              dtype='i', maxshape=(100000, 10001))
+#     dset = group[dset_name]
+#
+#     # store best gamma as attribute for future reference if doesn't exist
+#     skellam = info_dset.attrs['S']
+#     h = info_dset.attrs['h']
+#     if 'best_gamma' in dset.attrs.keys():
+#         best_gamma = dset.attrs['best_gamma']
+#     else:
+#         if skellam in np.arange(0.5, 10.1, 0.5) and h == 1:
+#             best_gamma = get_best_gamma(skellam, h, polyfit=False)
+#         else:
+#             best_gamma = get_best_gamma(skellam, h)
+#         dset.attrs['best_gamma'] = best_gamma
+#     gamma_samples, gamma_step = np.linspace(sample_range[0], sample_range[1], num_samples, retstep=True)
+#     attrslist = ['init_sample', 'end_sample', 'sample_step']
+#     values_dict = {'init_sample': sample_range[0],
+#                    'end_sample': sample_range[1],
+#                    'sample_step': gamma_step}
+#     for attrname in attrslist:
+#         if attrname not in dset.attrs.keys():
+#             dset.attrs[attrname] = values_dict[attrname]
+#
+#     # populate dataset
+#     for row_idx in row_indices:
+#         stim = tuple(trials_dset[row_idx, :2])
+#         gamma_array = np.reshape(np.r_[best_gamma, gamma_samples], (-1, 1))
+#         dset[row_idx, :] = decide_linear(gamma_array, stim)
+#     f.flush()
+#     f.close()
+
+
+if __name__ == '__main__':
+    """
+    aim is to create a small size database with data from a single dataset
+    arguments passed to the script should be in the following order:
+    1. speed
+    2. direction
+    3. coherence
+    4. num_trials
+    5. num_frames
+    6. db filename
+    """
+    if len(sys.argv) == 7:
+        # speed
+        try:
+            sp = float(sys.argv[1])
+            assert(sp > 0)
+        except ValueError:
+            print('\nError msg: first command line arg corresponding to speed should be a positive scalar\n')
+            exit(1)
+
+        # direction
+        try:
+            dir = sys.argv[2]
+            assert(dir == "left" or dir == "right")
+        except ValueError:
+            print('\nError msg: second command line arg corresponding to direction should be either "left" or "right"\n')
+            exit(1)
+
+        # coherence
+        try:
+            coh = float(sys.argv[3])
+            assert(coh >= 0 and coh <= 100)
+        except ValueError:
+            print('\nError msg: third command line arg corresponding to coherence should be a non-negative scalar'
+                  'between 0 and 100\n')
+            exit(1)
+
+        # Number of trials
+        try:
+            num_trials = int(sys.argv[4])
+            assert(num_trials > 0)
+        except ValueError:
+            print('\nError msg: fourth command line arg corresponding to number of trials should be a positive integer\n')
+            exit(1)
+
+        # Number of frames
+        try:
+            num_of_frames = int(sys.argv[5])
+            assert(num_of_frames > 0)
+        except ValueError:
+            print('\nError msg: fifth command line arg corresponding to number of frames should be a positive integer\n')
+            exit(1)
+
+        # hdf5 db filename
+        try:
+            db_filename = sys.argv[6]
+            if db_filename[-3:] != '.h5':
+                raise ValueError("By convention, db filename should end with '.h5'")
+        except ValueError as err:
+            print('\nError msg: sixth command line arg corresponding to filename has a pb')
+            print(err.args)
+            exit(1)
+
+        start_time = time.time()
+
+        parameters = dict(
+            speed=sp,
+            density=90,
+            coh_mean=coh,
+            coh_stdev=10,
+            direction=dir,
+            num_frames=num_of_frames,
+            diameter=10
+        )
+
+        stimulus = DotsStimulus(**parameters)
+        write_stimulus_to_file(stimulus, num_trials, db_filename)
+
+        print("--- {} seconds ---".format(time.time() - start_time))
+
+    elif len(sys.argv) == 1:
+        start_time = time.time()
+
+        parameters = dict(
+            speed=2.1,
+            density=90,
+            coh_mean=50,
+            coh_stdev=10,
+            direction='left',
+            num_frames=6,
+            diameter=10
+        )
+        n_trials = 500
+        stimulus = DotsStimulus(**parameters)
+        write_stimulus_to_file(stimulus, n_trials, 'test.h5')
+
+        print("--- {} seconds ---".format(time.time() - start_time))
+    else:
+        raise OSError('Script called with wrong number of command line args')
