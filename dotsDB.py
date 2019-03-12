@@ -155,7 +155,7 @@ class DotsStimulus:
             self.stencil_radius_in_vis_angle = self.diameter / 2
         else:
             self.stencil_radius_in_vis_angle = stencil_radius_in_vis_angle
-        self.stencil_radius_in_norm_units = self.stencil_radius_in_vis_angle / self.diameter
+        self.stencil_radius_in_norm_units = self.stencil_radius_in_vis_angle / self.field_width
 
         # actual width of field in screen in which dots are drawn.
         # in theory, a dot outside of the allowed stimulus region is invisible,
@@ -168,7 +168,7 @@ class DotsStimulus:
         self.frame_width_in_pxs = np.floor(self.pixels_per_degree * self.field_width).astype(int)
 
         # step size for coherent dots displacement (displacement is applied every self.interleaves frame)
-        self.coh_step = self.speed / self.diameter * (self.interleaves / self.frame_rate)
+        self.coh_step = self.speed / self.field_width * (self.interleaves / self.frame_rate)
         # set negative step if direction of motion is left
         self.direction = direction
         if self.direction == 'left':
