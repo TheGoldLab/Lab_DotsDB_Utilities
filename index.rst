@@ -10,7 +10,8 @@ Welcome to dotsDB's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   dotsDB
+.. automodule:: dotsDB
+   :members:
 
 Indices and tables
 ==================
