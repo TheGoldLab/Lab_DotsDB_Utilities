@@ -7,10 +7,10 @@ Welcome to dotsDB's documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 4
-   :caption: Contents:
+    :maxdepth: 4
+    :caption: Contents:
 
-   modules
+    dotsDB
 
 Indices and tables
 ==================
