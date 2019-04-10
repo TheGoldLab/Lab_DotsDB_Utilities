@@ -5,13 +5,6 @@ import time
 import sys
 
 
-"""
-REMARKS:
-the way DotsStimulus.coh_step is currently computed does not account 
-correctly for DotsStimulus.field_width
-This is intentional, to match the 'bug' in the MATLAB code...
-"""
-
 """--------------------- DISPLAY FUNCTIONS ------------------------"""
 
 
@@ -125,7 +118,7 @@ class DotsStimulus:
                  diameter,
                  stencil_radius_in_vis_angle=None,
                  pixels_per_degree=55.4612,
-                 dot_size_in_pxs=4):
+                 dot_size_in_pxs=6):
         """
         :param speed:
         :param density:
@@ -151,16 +144,16 @@ class DotsStimulus:
         # diameter of region on screen in degrees of visual angle, in which dots appear
         self.diameter = diameter
 
+        # actual width of field in screen in which dots are drawn.
+        # in theory, a dot outside of the allowed stimulus region is invisible,
+        # but this is not yet implemented...
+        self.field_width = self.diameter * self.field_scale
+
         if stencil_radius_in_vis_angle is None:
             self.stencil_radius_in_vis_angle = self.diameter / 2
         else:
             self.stencil_radius_in_vis_angle = stencil_radius_in_vis_angle
         self.stencil_radius_in_norm_units = self.stencil_radius_in_vis_angle / self.field_width
-
-        # actual width of field in screen in which dots are drawn.
-        # in theory, a dot outside of the allowed stimulus region is invisible,
-        # but this is not yet implemented...
-        self.field_width = self.diameter * self.field_scale
 
         # some useful pixel dimensions
         self.pixels_per_degree = pixels_per_degree
@@ -620,7 +613,7 @@ if __name__ == '__main__':
             coh_stdev=10,
             direction=dir,
             num_frames=num_of_frames,
-            diameter=10
+            diameter=5
         )
 
         stimulus = DotsStimulus(**parameters)
@@ -632,15 +625,15 @@ if __name__ == '__main__':
         start_time = time.time()
 
         parameters = dict(
-            speed=2.1,
+            speed=5,
             density=90,
             coh_mean=50,
             coh_stdev=10,
             direction='left',
             num_frames=6,
-            diameter=10
+            diameter=5
         )
-        n_trials = 500
+        n_trials = 100
         stimulus = DotsStimulus(**parameters)
         write_stimulus_to_file(stimulus, n_trials, 'test.h5')
 
