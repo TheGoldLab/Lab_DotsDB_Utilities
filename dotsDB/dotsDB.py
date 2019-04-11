@@ -99,6 +99,268 @@ def flatten_pixel_frame(f):
     return f.reshape(f.size)
 
 
+"""----------------------- DB FUNCTIONS ------------------------"""
+
+
+def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, hold_stim_in_mem=True):
+    """
+
+    :param stim: a freshly created instance of DotsStimulus
+    :param num_of_trials: number of trials to generate
+    :param filename:
+    :param create_file:
+    :param hold_stim_in_mem:
+    :return:
+    """
+    stim_params = stim.export_params()
+
+    if create_file:
+        f = h5py.File(filename, 'x')  # this fails if file exists already
+
+    # create group corresponding to parameters
+    group_name = build_group_name(stim)
+    group = f.create_group(group_name)
+    # and add all parameters as attributes
+    for k, v in stim_params.items():
+        group.attrs.__setitem__(k, v)
+
+    if hold_stim_in_mem:
+        # generate stimulus upfront
+        num_pxs = (stim_params['frame_width_in_pxs']**2) * stim_params['num_frames']
+        all_data = np.zeros((num_of_trials, num_pxs), dtype=np.bool)
+        for t in range(num_of_trials):
+            frames_seq = [flatten_pixel_frame(
+                stim.norm_to_pixel_frame(fr)
+                ) for fr in list(stim.normalized_dots_frame_generator())]
+            all_data[t, :] = np.concatenate(frames_seq, axis=None)
+
+        # and write it
+        group.create_dataset("px",
+                             data=all_data,
+                             maxshape=(None, num_pxs),
+                             compression="gzip",
+                             compression_opts=9,
+                             fletcher32=True)
+    f.flush()
+    f.close()
+    return None
+
+
+def inspect_db(filename):
+    """
+    Loops recursively through all groups and datasets of an hdf5 database, and
+    displays their attributes (and shape for datasets)
+    file is opened in read-only mode with context manager
+
+    :param filename: full path to hdf5 file
+    :return: dict with, as top-level keys, the names of the h5py objects contained in the file
+    """
+    def _inspect_element(name):
+        """
+        Important, for this function to work, an h5py.File instance must be in the
+        scope of the function with name ff, and a dict with name dd as well
+
+        :param name: name of hdf5 object
+        :return:
+        """
+        obj = ff[name]  # current object being visited
+        attributes = [(k, v) for (k, v) in obj.attrs.items()]
+        if isinstance(obj, h5py.Dataset):
+            dd[name] = {'type': 'dataset', 'attrs': attributes, 'shape': obj.shape}
+        elif isinstance(obj, h5py.Group):
+            dd[name] = {'type': 'group', 'attrs': attributes}
+        else:
+            print(f"visited object {name} is neither group nor dataset, type is {type(obj)}")
+
+        return None
+
+    dd = {}  # initialize dict to return
+
+    with h5py.File(filename, 'r') as ff:
+        ff.visit(_inspect_element)
+
+    return dd
+
+
+def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number):
+    """
+    extracts a specific trial from the database and returns it as a 3D matrix of pixel frames
+    Uses context manager to open the file in read-only mode
+    TODO: better explain the orientation of the dots (what is left-right, what is bottom-up)
+
+    :param path_to_file: string with absolute path to hdf5 file
+    :param dset_name: string for name of dataset in hdf5 file (full path within the file)
+    :param group_name: string for name of group that contains the dataset in hdf5 file (full path within the file)
+    :param trial_number: number for the trial to extract
+    :return: 3D numpy array, first two dims for pixels, last dim for frames
+    """
+    with h5py.File(path_to_file, 'r') as f:
+        s = f[dset_name]
+        g = f[group_name]
+        assert (isinstance(s, h5py.Dataset) and isinstance(g, h5py.Group))
+        npx = g.attrs['frame_width_in_pxs']
+        nf = g.attrs['num_frames']
+        #         fr = g.attrs['frame_rate']
+        trial = s[trial_number - 1, :]
+    return trial.reshape((npx, npx, nf), order="F")
+
+
+# def create_hdf5_data_structure(hdf5file, groupname, num_trials, num_samples, max_trials=1000000):
+#     """
+#     :param hdf5file: h5py.File
+#     :param groupname:
+#     :param num_trials: nb of trials
+#     :param max_trials: for db decision datasets max nb of rows
+#     :param num_samples: for db decision datasets; nb of cols
+#     :return: created group
+#     """
+#     group = hdf5file.create_group(groupname)
+#     dt = h5py.special_dtype(vlen=np.dtype('f'))
+#     group.create_dataset('trials', (num_trials, 3), maxshape=(max_trials, 10), dtype=dt)
+#     group.create_dataset('trial_info', (num_trials, 3), maxshape=(max_trials, 10), dtype='f')
+#     group.create_dataset('decision_lin', (num_trials, num_samples), dtype='i', maxshape=(max_trials, num_samples))
+#     group.create_dataset('decision_nonlin', (num_trials, num_samples),
+#                          dtype='i', maxshape=(max_trials, num_samples))
+#     return group
+#
+#
+# def populate_hdf5_db(fname, four_par, num_of_trials, number_of_samples=1):
+#     """
+#     Generate stimulus data and store as hdf5 file.
+#     This is the main function called by this script.
+#     """
+#     # open/create file
+#     f = h5py.File(fname, 'a')
+#     ll, lh, h, t = four_par
+#
+#     # create group corresponding to parameters
+#     group_name = build_group_name(four_par)
+#
+#     if group_name in f:  # if dataset already exists, exit without doing anything
+#         print('data already present, file left untouched')
+#     else:  # if dataset doesn't exist, create it
+#         print('creating dataset with group name {}'.format(group_name))
+#         grp = create_hdf5_data_structure(f, group_name, num_of_trials, num_samples=number_of_samples)
+#
+#         # create trials dataset
+#         trials_data = grp['trials']
+#         # get row indices of new data to insert
+#         row_indices = np.r_[:num_of_trials]
+#
+#         # create info on data
+#         info_data = grp['trial_info']  # info dataset
+#         info_data.attrs['h'] = h
+#         info_data.attrs['T'] = t
+#         info_data.attrs['low_click_rate'] = ll
+#         info_data.attrs['high_click_rate'] = lh
+#         info_data.attrs['S'] = (lh - ll) / np.sqrt(ll + lh)
+#         data_version = 1  # version number of new data to insert
+#
+#     # populate database
+#     for row_idx in row_indices:
+#         # vector of CP times
+#         cptimes = gen_cp(t, h)
+#         trials_data[row_idx, 2] = cptimes
+#
+#         # stimulus (left clicks, right clicks)
+#         (left_clicks, right_clicks), init_state, end_state = gen_stim(cptimes, ll, lh, t)
+#         trials_data[row_idx, :2] = left_clicks, right_clicks
+#
+#         # populate info dataset
+#         info_data[row_idx, :] = init_state, end_state, data_version
+#
+#     info_data.attrs['last_version'] = data_version
+#     f.flush()
+#     f.close()
+#
+#
+# def dump_info(four_parameters, s, nt, nruns):
+#     print('S value: {}'.format(s))
+#     print('low click rate: {}'.format(four_parameters[0]))
+#     print('high click rate: {}'.format(four_parameters[1]))
+#     print('hazard rate: {}'.format(four_parameters[2]))
+#     print('interr. time: {}'.format(four_parameters[3]))
+#     print('nb of trials / hist: {}'.format(nruns))
+#     print('nb of trials in sequence: {}'.format(nt))
+
+
+def build_group_name(stimulus):
+    """
+    :param stimulus: a DotsStimulus object
+    :return: string
+    """
+    params = stimulus.export_params()
+    abbrev = {
+        'interleaves': 'intlv',
+        'limit_life_time': 'lft',
+        'frame_rate': 'fr',
+        'field_scale': 'fs',
+        'speed': 'sp',
+        'density': 'ds',
+        'coh_mean': 'c',
+        'coh_stdev': 'cs',
+        'direction': 'd',
+        'num_frames': 'nf',
+        'diameter': 'dm',
+        'stencil_radius_in_vis_angle': 'sc',
+        'pixels_per_degree': 'ppd',
+        'dot_size_in_pxs': 'dts',
+        'frame_width_in_pxs': 'fw'
+    }
+    return '_'.join(['%s%s' % (abbrev[key], value) for (key, value) in params.items()])
+
+#
+# def update_linear_decision_data(file_name, group_name, num_samples, sample_range, create_nonlin_db=False):
+#     """
+#     :param file_name: file name (string)
+#     :param group_name: group object from h5py module
+#     :param num_samples:
+#     :param sample_range: (starting value, ending value)
+#     :param create_nonlin_db:
+#     :return:
+#     """
+#     f = h5py.File(file_name, 'r+')
+#     group = f[group_name]
+#     info_dset = group['trial_info']
+#     trials_dset = group['trials']
+#     num_trials = trials_dset.shape[0]
+#     row_indices = range(num_trials)
+#     dset_name = 'decision_lin'
+#     if create_nonlin_db:
+#         # create dataset for nonlinear decisions
+#         group.create_dataset('decision_nonlin', (num_trials, num_samples),
+#                              dtype='i', maxshape=(100000, 10001))
+#     dset = group[dset_name]
+#
+#     # store best gamma as attribute for future reference if doesn't exist
+#     skellam = info_dset.attrs['S']
+#     h = info_dset.attrs['h']
+#     if 'best_gamma' in dset.attrs.keys():
+#         best_gamma = dset.attrs['best_gamma']
+#     else:
+#         if skellam in np.arange(0.5, 10.1, 0.5) and h == 1:
+#             best_gamma = get_best_gamma(skellam, h, polyfit=False)
+#         else:
+#             best_gamma = get_best_gamma(skellam, h)
+#         dset.attrs['best_gamma'] = best_gamma
+#     gamma_samples, gamma_step = np.linspace(sample_range[0], sample_range[1], num_samples, retstep=True)
+#     attrslist = ['init_sample', 'end_sample', 'sample_step']
+#     values_dict = {'init_sample': sample_range[0],
+#                    'end_sample': sample_range[1],
+#                    'sample_step': gamma_step}
+#     for attrname in attrslist:
+#         if attrname not in dset.attrs.keys():
+#             dset.attrs[attrname] = values_dict[attrname]
+#
+#     # populate dataset
+#     for row_idx in row_indices:
+#         stim = tuple(trials_dset[row_idx, :2])
+#         gamma_array = np.reshape(np.r_[best_gamma, gamma_samples], (-1, 1))
+#         dset[row_idx, :] = decide_linear(gamma_array, stim)
+#     f.flush()
+#     f.close()
+
+
 """--------------------- STIMULUS CLASS ------------------------"""
 
 
@@ -321,224 +583,6 @@ class DotsStimulus:
                 corner, dims = pixel_to_patch(pt_coord_in_pxs,  patch_shape, grid.shape)
                 set_patch(corner, dims, grid)
         return grid
-
-
-"""----------------------- DB FUNCTIONS ------------------------"""
-
-
-def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, hold_stim_in_mem=True):
-    """
-
-    :param stim: a freshly created instance of DotsStimulus
-    :param num_of_trials: number of trials to generate
-    :param filename:
-    :param create_file:
-    :param hold_stim_in_mem:
-    :return:
-    """
-    stim_params = stim.export_params()
-
-    if create_file:
-        f = h5py.File(filename, 'x')  # this fails if file exists already
-
-    # create group corresponding to parameters
-    group_name = build_group_name(stim)
-    group = f.create_group(group_name)
-    # and add all parameters as attributes
-    for k, v in stim_params.items():
-        group.attrs.__setitem__(k, v)
-
-    if hold_stim_in_mem:
-        # generate stimulus upfront
-        num_pxs = (stim_params['frame_width_in_pxs']**2) * stim_params['num_frames']
-        all_data = np.zeros((num_of_trials, num_pxs), dtype=np.bool)
-        for t in range(num_of_trials):
-            frames_seq = [flatten_pixel_frame(
-                stim.norm_to_pixel_frame(fr)
-                ) for fr in list(stim.normalized_dots_frame_generator())]
-            all_data[t, :] = np.concatenate(frames_seq, axis=None)
-
-        # and write it
-        group.create_dataset("px",
-                             data=all_data,
-                             maxshape=(None, num_pxs),
-                             compression="gzip",
-                             compression_opts=9,
-                             fletcher32=True)
-    f.flush()
-    f.close()
-    return None
-
-
-def inspect_db(filename, groupname, dsetname):
-    """
-    displays attributes of the group, and the shape of the dataset
-    :param filename:
-    :param groupname:
-    :param dsetname:
-    :return:
-    """
-    f = h5py.File(filename, 'r')
-    g = f[groupname]
-    stim = g[dsetname]
-    print(f'dset {dsetname} has shape: {stim.shape}\nattributes of group {groupname} are:')
-    for k, v in g.attrs.items():
-        print(k, v)
-#
-# def create_hdf5_data_structure(hdf5file, groupname, num_trials, num_samples, max_trials=1000000):
-#     """
-#     :param hdf5file: h5py.File
-#     :param groupname:
-#     :param num_trials: nb of trials
-#     :param max_trials: for db decision datasets max nb of rows
-#     :param num_samples: for db decision datasets; nb of cols
-#     :return: created group
-#     """
-#     group = hdf5file.create_group(groupname)
-#     dt = h5py.special_dtype(vlen=np.dtype('f'))
-#     group.create_dataset('trials', (num_trials, 3), maxshape=(max_trials, 10), dtype=dt)
-#     group.create_dataset('trial_info', (num_trials, 3), maxshape=(max_trials, 10), dtype='f')
-#     group.create_dataset('decision_lin', (num_trials, num_samples), dtype='i', maxshape=(max_trials, num_samples))
-#     group.create_dataset('decision_nonlin', (num_trials, num_samples),
-#                          dtype='i', maxshape=(max_trials, num_samples))
-#     return group
-#
-#
-# def populate_hdf5_db(fname, four_par, num_of_trials, number_of_samples=1):
-#     """
-#     Generate stimulus data and store as hdf5 file.
-#     This is the main function called by this script.
-#     """
-#     # open/create file
-#     f = h5py.File(fname, 'a')
-#     ll, lh, h, t = four_par
-#
-#     # create group corresponding to parameters
-#     group_name = build_group_name(four_par)
-#
-#     if group_name in f:  # if dataset already exists, exit without doing anything
-#         print('data already present, file left untouched')
-#     else:  # if dataset doesn't exist, create it
-#         print('creating dataset with group name {}'.format(group_name))
-#         grp = create_hdf5_data_structure(f, group_name, num_of_trials, num_samples=number_of_samples)
-#
-#         # create trials dataset
-#         trials_data = grp['trials']
-#         # get row indices of new data to insert
-#         row_indices = np.r_[:num_of_trials]
-#
-#         # create info on data
-#         info_data = grp['trial_info']  # info dataset
-#         info_data.attrs['h'] = h
-#         info_data.attrs['T'] = t
-#         info_data.attrs['low_click_rate'] = ll
-#         info_data.attrs['high_click_rate'] = lh
-#         info_data.attrs['S'] = (lh - ll) / np.sqrt(ll + lh)
-#         data_version = 1  # version number of new data to insert
-#
-#     # populate database
-#     for row_idx in row_indices:
-#         # vector of CP times
-#         cptimes = gen_cp(t, h)
-#         trials_data[row_idx, 2] = cptimes
-#
-#         # stimulus (left clicks, right clicks)
-#         (left_clicks, right_clicks), init_state, end_state = gen_stim(cptimes, ll, lh, t)
-#         trials_data[row_idx, :2] = left_clicks, right_clicks
-#
-#         # populate info dataset
-#         info_data[row_idx, :] = init_state, end_state, data_version
-#
-#     info_data.attrs['last_version'] = data_version
-#     f.flush()
-#     f.close()
-#
-#
-# def dump_info(four_parameters, s, nt, nruns):
-#     print('S value: {}'.format(s))
-#     print('low click rate: {}'.format(four_parameters[0]))
-#     print('high click rate: {}'.format(four_parameters[1]))
-#     print('hazard rate: {}'.format(four_parameters[2]))
-#     print('interr. time: {}'.format(four_parameters[3]))
-#     print('nb of trials / hist: {}'.format(nruns))
-#     print('nb of trials in sequence: {}'.format(nt))
-
-
-def build_group_name(stimulus):
-    """
-    :param stimulus: a DotsStimulus object
-    :return: string
-    """
-    params = stimulus.export_params()
-    abbrev = {
-        'interleaves': 'intlv',
-        'limit_life_time': 'lft',
-        'frame_rate': 'fr',
-        'field_scale': 'fs',
-        'speed': 'sp',
-        'density': 'ds',
-        'coh_mean': 'c',
-        'coh_stdev': 'cs',
-        'direction': 'd',
-        'num_frames': 'nf',
-        'diameter': 'dm',
-        'stencil_radius_in_vis_angle': 'sc',
-        'pixels_per_degree': 'ppd',
-        'dot_size_in_pxs': 'dts',
-        'frame_width_in_pxs': 'fw'
-    }
-    return '_'.join(['%s%s' % (abbrev[key], value) for (key, value) in params.items()])
-
-#
-# def update_linear_decision_data(file_name, group_name, num_samples, sample_range, create_nonlin_db=False):
-#     """
-#     :param file_name: file name (string)
-#     :param group_name: group object from h5py module
-#     :param num_samples:
-#     :param sample_range: (starting value, ending value)
-#     :param create_nonlin_db:
-#     :return:
-#     """
-#     f = h5py.File(file_name, 'r+')
-#     group = f[group_name]
-#     info_dset = group['trial_info']
-#     trials_dset = group['trials']
-#     num_trials = trials_dset.shape[0]
-#     row_indices = range(num_trials)
-#     dset_name = 'decision_lin'
-#     if create_nonlin_db:
-#         # create dataset for nonlinear decisions
-#         group.create_dataset('decision_nonlin', (num_trials, num_samples),
-#                              dtype='i', maxshape=(100000, 10001))
-#     dset = group[dset_name]
-#
-#     # store best gamma as attribute for future reference if doesn't exist
-#     skellam = info_dset.attrs['S']
-#     h = info_dset.attrs['h']
-#     if 'best_gamma' in dset.attrs.keys():
-#         best_gamma = dset.attrs['best_gamma']
-#     else:
-#         if skellam in np.arange(0.5, 10.1, 0.5) and h == 1:
-#             best_gamma = get_best_gamma(skellam, h, polyfit=False)
-#         else:
-#             best_gamma = get_best_gamma(skellam, h)
-#         dset.attrs['best_gamma'] = best_gamma
-#     gamma_samples, gamma_step = np.linspace(sample_range[0], sample_range[1], num_samples, retstep=True)
-#     attrslist = ['init_sample', 'end_sample', 'sample_step']
-#     values_dict = {'init_sample': sample_range[0],
-#                    'end_sample': sample_range[1],
-#                    'sample_step': gamma_step}
-#     for attrname in attrslist:
-#         if attrname not in dset.attrs.keys():
-#             dset.attrs[attrname] = values_dict[attrname]
-#
-#     # populate dataset
-#     for row_idx in row_indices:
-#         stim = tuple(trials_dset[row_idx, :2])
-#         gamma_array = np.reshape(np.r_[best_gamma, gamma_samples], (-1, 1))
-#         dset[row_idx, :] = decide_linear(gamma_array, stim)
-#     f.flush()
-#     f.close()
 
 
 if __name__ == '__main__':
