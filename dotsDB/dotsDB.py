@@ -191,7 +191,7 @@ def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number)
     :param path_to_file: string with absolute path to hdf5 file
     :param dset_name: string for name of dataset in hdf5 file (full path within the file)
     :param group_name: string for name of group that contains the dataset in hdf5 file (full path within the file)
-    :param trial_number: number for the trial to extract
+    :param trial_number: number for the trial to extract, should be an int >= 1
     :return: 3D numpy array, first two dims for pixels, last dim for frames
     """
     with h5py.File(path_to_file, 'r') as f:
