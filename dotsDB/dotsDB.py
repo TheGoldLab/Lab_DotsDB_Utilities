@@ -679,14 +679,15 @@ class DotsStimulus:
 
 if __name__ == '__main__':
     """
-    aim is to create a small size database with data from a single dataset
-    arguments passed to the script should be in the following order:
+    Script may be called with 0 or 6 arguments from command line. With 6 arguments, these are:
     1. speed
     2. direction
     3. coherence
     4. num_trials
     5. num_frames
     6. db filename
+
+    With 0 arguments, the script appends requested datasets to given file 
     """
     if len(sys.argv) == 7:
         # speed
@@ -759,20 +760,48 @@ if __name__ == '__main__':
 
     elif len(sys.argv) == 1:
         start_time = time.time()
+        # this script adds new groups (with newly generated datasets) to an existing dotsDB HDF5 file
 
-        parameters = dict(
-            speed=5,
-            density=90,
-            coh_mean=50,
-            coh_stdev=10,
-            direction='left',
-            num_frames=6,
-            diameter=5
-        )
-        n_trials = 100
-        stimulus = DotsStimulus(**parameters)
-        write_stimulus_to_file(stimulus, n_trials, 'test.h5')
+        # file name
+        file_name = '../data/test.h5'
+
+        # parameters of new datasets to create:
+        params = {
+            'speed': [5],
+            'density': [90],
+            'coh_mean': [0, 10, 30, 80, 100],
+            'coh_stdev': [10],
+            'direction': ['left', 'right'],
+            'num_frames': [6],
+            'diameter': [5]
+        }
+
+        num_trials = 100
+
+        # edit params so that shorter entries are recycled
+
+        # get total number of combinations
+        num_comb = 1
+        for v in params.values():
+            num_comb *= len(v)
+
+        # recycle values 
+        for k, v in params.items():
+            recycle_factor = num_comb // len(v)
+            params[k] *= recycle_factor
+
+        import pprint
+        #pprint.pprint(params)
+        #print(num_trials)
+
+        for dset_idx in range(num_comb):
+            curr_dict = {k: v[dset_idx] for k, v in params.items()}
+            S = DotsStimulus(**curr_dict)
+            write_stimulus_to_file(S, num_trials, file_name, create_file=False)
 
         print("--- {} seconds ---".format(time.time() - start_time))
+        
+        pprint.pprint(inspect_db(file_name), width=120)
+
     else:
         raise OSError('Script called with wrong number of command line args')
