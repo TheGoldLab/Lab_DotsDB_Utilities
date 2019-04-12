@@ -20,6 +20,7 @@ def wrap_norm_coord(to_wrap):
 def point_to_pixel(coord, grid_dims):
     """
     converts the coordinates of a dot from normalized space to pixel space
+
     :param coord: ndarray of length 2 with double entries representing normalized coordinates of a dot
     :param grid_dims: ndarray of length 2 with integer entries, e.g. np.array((3,2)) for a 3 x 2 grid
     :return: ndarray of length 2 and entries of type np.intp
@@ -35,6 +36,7 @@ def pixel_to_patch(px_idxs, patch_dims, grid_dims):
     Even vs. odd values of the entries of patch_dims are treated differently.
     Parts of patch falling outside the grid are truncated.
     Right now, only square grids and square patches are handled.
+
     :param px_idxs: pixel coordinates of a dot
     :param patch_dims: 2-tuple containing height and width of patch in pixels
     :param grid_dims: height and width of pixel grid
@@ -74,6 +76,7 @@ def pixel_to_patch(px_idxs, patch_dims, grid_dims):
 def set_patch(patch_top_left_corner, patch_dims, grid, value=True):
     """
     Sets the values in grid that correspond to the patch location to True
+
     :param patch_top_left_corner: pixel coordinates of top corner of patch
     :param patch_dims: 2-ndarray in pixels (dtype is np.intp)
     :param grid: 2D ndarray
@@ -93,6 +96,7 @@ def set_patch(patch_top_left_corner, patch_dims, grid, value=True):
 def flatten_pixel_frame(f):
     """
     a 2D pixel frame is flattened, whereby rows are concatenated
+
     :param f: 2D ndarray of boolean values representing a pixel frame
     :return: 1D ndarray of boolean values
     """
@@ -472,10 +476,13 @@ class DotsStimulus:
         position of the dot, col 2 corresponds to the vertical position of the dot.
         So, (0,0) is the top left corner; (.99, .99) is the bottom right corner;
         (0,.5) is a dot positioned at the top row and midway between left and right.
-        Note that 1 is not an allowed coordinate, only values in [0,1) are.
-        :param max_frames: max number of frames to generate (defaults to self.num_frames)
-        :return: generator object. Yields a 'successor' frame on each iteration.
         First frame is randomly generated
+        
+        .. note::
+            1 is not an allowed coordinate, only values in [0,1) are.
+
+        :param max_frames: max number of frames to generate (defaults to self.num_frames)
+        :return: generator object. Yields a 'successor' frame on each iteration.  
         """
         if max_frames is None:
             max_frames = self.num_frames
@@ -494,8 +501,7 @@ class DotsStimulus:
     def next_frame(self, present_frame, present_lifetimes):
         """
         Computes the next frame. This function mimicks dotsDrawableDotKinetogram.computeNextFrame()
-        from the MATLAB code
-        https://github.com/TheGoldLab/Lab-Matlab-Control/blob/eyeDev/snow-dots/classes/drawable/dotsDrawableDotKinetogram.m
+        from the `MATLAB code <https://github.com/TheGoldLab/Lab-Matlab-Control/blob/eyeDev/snow-dots/classes/drawable/dotsDrawableDotKinetogram.m>`_
 
         :param present_frame: normalized frame as handled by self.normalized_dots_frame_generator()
         :param present_lifetimes: numpy array
