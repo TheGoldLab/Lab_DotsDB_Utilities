@@ -190,9 +190,9 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
         group.attrs.__setitem__(k, v)
 
     # generate stimulus upfront
-    if pre_generated_stimulus is not None:
+    use_pre_generated_stimulus = (pre_generated_stimulus is not None)
+    if use_pre_generated_stimulus:
         assert len(pre_generated_stimulus) == num_of_trials
-        use_pre_generated_stimulus = True
 
     num_pxs = (stim_params['frame_width_in_pxs']**2) * stim_params['num_frames']
     all_data = np.zeros((num_of_trials, num_pxs), dtype=np.bool)
@@ -785,20 +785,20 @@ if __name__ == '__main__':
         # this script adds new groups (with newly generated datasets) to an existing dotsDB HDF5 file
 
         # file name
-        file_name = '../data/test.h5'
+        file_name = '../data/test2.h5'
 
         # parameters of new datasets to create:
         params = {
             'speed': [5],
             'density': [90],
-            'coh_mean': [0, 10, 30, 80, 100],
+            'coh_mean': [0, 30, 80],
             'coh_stdev': [10],
             'direction': ['left', 'right'],
-            'num_frames': [6],
+            'num_frames': [15],
             'diameter': [5]
         }
 
-        num_trials = 100
+        num_trials = 50
 
         # edit params so that shorter entries are recycled
 
@@ -819,7 +819,7 @@ if __name__ == '__main__':
         for dset_idx in range(num_comb):
             curr_dict = {k: v[dset_idx] for k, v in params.items()}
             S = DotsStimulus(**curr_dict)
-            write_stimulus_to_file(S, num_trials, file_name, create_file=False)
+            write_stimulus_to_file(S, num_trials, file_name, create_file=(dset_idx == 0)) # only create the file at first iteration
 
         print("--- {} seconds ---".format(time.time() - start_time))
         
