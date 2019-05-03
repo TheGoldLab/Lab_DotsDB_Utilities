@@ -196,15 +196,21 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
     if use_pre_generated_stimulus:
         assert len(pre_generated_stimulus) == num_of_trials
 
-    # num_pxs = (stim_params['frame_width_in_pxs']**2) * stim_params['num_frames']
+    num_frames_margin = 15  # number of extra frames to add to get upper bound (required in shape arg of create_dataset)
+    max_trials = 10000  # max number of trials to write to this dataset
+    curr_num_frames = stim_params['num_frames']
+    init_pxs = (stim_params['frame_width_in_pxs']**2) * curr_num_frames
+    max_pxs = (stim_params['frame_width_in_pxs']**2) * (curr_num_frames + num_frames_margin)
 
     # create dataset with variable length (because each trial may have a different number of frames)
     vlen_data_type = h5py.special_dtype(vlen=np.bool_)
     dset = group.create_dataset("px",
-                                (None, None),
+                                (num_of_trials, init_pxs),
+                                maxshape=(max_trials, max_pxs),
                                 compression="gzip",
                                 compression_opts=9,
                                 fletcher32=True,
+                                # chunks=False,  # when not False, I get a bug
                                 dtype=vlen_data_type)
 
     for t in range(num_of_trials):
