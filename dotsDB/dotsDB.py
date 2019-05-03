@@ -115,7 +115,7 @@ def pixel_to_patch(px_idxs, patch_dims, grid_dims):
 
 def set_patch(patch_top_left_corner, patch_dims, grid, value=np.True_):
     """
-    Sets the values in grid that correspond to the patch location to True
+    Sets the values in grid that correspond to the patch location to np.True_
 
     :param patch_top_left_corner: pixel coordinates of top corner of patch
     :param patch_dims: 2-ndarray in pixels
@@ -476,7 +476,7 @@ class DotsStimulus:
         :param density: nb of dots per unit area, where distance unit is deg vis. angles
         :param coh_mean: between 0 and 100, mean percentage of coherently moving dots
         :param coh_stdev: stdev of percentage of coherently moving dots
-        :param direction: 'right' or 'left'
+        :param direction: 'right' or 'left' or 'last_right' or 'last_left'
         :param num_frames: number of frames for stimulus
         :param diameter: in deg vis angle
         :param stencil_radius_in_vis_angle: radius of stencil that encloses visible dots (defaults to diameter / 2)
@@ -541,7 +541,17 @@ class DotsStimulus:
         # for idx in range(self.num_dots_in_chunk % self.interleaves):
         #     self.num_dots_in_frames[idx] += 1
 
-        self.attached_data = attached_data
+        self._attached_data = attached_data
+
+    @property
+    def attached_data(self):
+        return self._attached_data
+
+    @attached_data.setter
+    def attached_data(self, value):
+        """just to make sure that self.num_frames is updated when new data is attached"""
+        self.num_frames = len(value)
+        self._attached_data = value
 
     def export_params(self):
         """export parameters of the stimulus"""
@@ -630,7 +640,7 @@ class DotsStimulus:
                 'x': present_frame[:, 0],
                 'y': present_frame[:, 1],
                 'lifetime': present_lifetimes,
-                'is_coherent': np.full_like(present_lifetimes, False, dtype=np.bool)
+                'is_coherent': np.full_like(present_lifetimes, np.False_, dtype=np.bool_)
             }
 
             dots_dataframe = pd.DataFrame(compound_data)
@@ -640,7 +650,7 @@ class DotsStimulus:
             # following syntax was hard to find. I found it here:
             # https://stackoverflow.com/a/44792367
             lifetime_ordered_dots.iloc[:num_coh_dots,
-                                       lifetime_ordered_dots.columns.get_loc('is_coherent')] = True
+                                       lifetime_ordered_dots.columns.get_loc('is_coherent')] = np.True_
 
             # increment lifetime by 1 for coherent dots
             lifetime_ordered_dots.loc[lifetime_ordered_dots['is_coherent'], 'lifetime'] += 1
@@ -693,7 +703,7 @@ class DotsStimulus:
         grid = np.full((grid_size, grid_size), np.False_)  # array of boolean values representing pixels
         patch_shape = (self.dot_size_in_pxs, self.dot_size_in_pxs)
 
-        # loop over dots and set the corresponding pixels to True
+        # loop over dots and set the corresponding pixels to np.True_
         for point in normalized_frame:
             # if dot falls outside visible region (stencil), do not draw it
             if np.sum((point-0.5)**2) <= self.stencil_radius_in_norm_units**2:
@@ -727,9 +737,10 @@ if __name__ == '__main__':
         # direction
         try:
             dir = sys.argv[2]
-            assert(dir == "left" or dir == "right")
+            assert(dir == "left" or dir == "right" or dir == "last_left" or dir == "last_right")
         except ValueError:
-            print('\nError msg: second command line arg corresponding to direction should be either "left" or "right"\n')
+            print('\nError msg: second command line arg corresponding to direction should be either "left" or "right"'
+                  'or "last_left" or "last_right"\n')
             exit(1)
 
         # coherence
