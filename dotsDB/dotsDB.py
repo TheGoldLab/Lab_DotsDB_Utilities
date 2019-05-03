@@ -206,7 +206,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
     vlen_data_type = h5py.special_dtype(vlen=np.bool)
     dset = group.create_dataset("px",
                                 (num_of_trials, init_pxs),
-                                maxshape=(max_trials, max_pxs),
+                                maxshape=(None, None),
                                 compression="gzip",
                                 compression_opts=9,
                                 fletcher32=True,
