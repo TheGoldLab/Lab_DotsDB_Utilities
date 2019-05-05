@@ -113,15 +113,15 @@ def pixel_to_patch(px_idxs, patch_dims, grid_dims):
     return top_left_corner.astype(np.intp), new_patch_dims.astype(np.intp)
 
 
-def set_patch(patch_top_left_corner, patch_dims, grid, value=True):
+def set_patch(patch_top_left_corner, patch_dims, grid, value=np.True_):
     """
-    Sets the values in grid that correspond to the patch location to True
+    Sets the values in grid that correspond to the patch location to np.True_
 
     :param patch_top_left_corner: pixel coordinates of top corner of patch
     :param patch_dims: 2-ndarray in pixels
     :type patch_dims: np.intp
     :param grid: 2D ndarray
-    :param value: value to what pixels should be set (default=True)
+    :param value: value to what pixels should be set (default=np.True_)
     :return: grid is changed in-place
     :rtype: None
     """
@@ -203,7 +203,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
     max_pxs = (stim_params['frame_width_in_pxs']**2) * (curr_num_frames + num_frames_margin)
 
     # create dataset with variable length (because each trial may have a different number of frames)
-    vlen_data_type = h5py.special_dtype(vlen=np.bool)
+    vlen_data_type = h5py.special_dtype(vlen=np.bool_)
     dset = group.create_dataset("px",
                                 (num_of_trials, init_pxs),
                                 maxshape=(None, None),
@@ -646,7 +646,7 @@ class DotsStimulus:
                 'x': present_frame[:, 0],
                 'y': present_frame[:, 1],
                 'lifetime': present_lifetimes,
-                'is_coherent': np.full_like(present_lifetimes, False, dtype=np.bool)
+                'is_coherent': np.full_like(present_lifetimes, np.False_, dtype=np.bool_)
             }
 
             dots_dataframe = pd.DataFrame(compound_data)
@@ -656,7 +656,7 @@ class DotsStimulus:
             # following syntax was hard to find. I found it here:
             # https://stackoverflow.com/a/44792367
             lifetime_ordered_dots.iloc[:num_coh_dots,
-                                       lifetime_ordered_dots.columns.get_loc('is_coherent')] = True
+                                       lifetime_ordered_dots.columns.get_loc('is_coherent')] = np.True_
 
             # increment lifetime by 1 for coherent dots
             lifetime_ordered_dots.loc[lifetime_ordered_dots['is_coherent'], 'lifetime'] += 1
@@ -702,14 +702,14 @@ class DotsStimulus:
 
         :param normalized_frame: num_dots x 2 array
         :type normalized_frame: ndarray of doubles
-        :return: pixel frame represented as an num_pixels x num_pixels ndarray with np.bool entries
+        :return: pixel frame represented as an num_pixels x num_pixels ndarray with np.bool_ entries
         """
         # create square grid of pixels and define dimensions of dot in pixel space
         grid_size = self.frame_width_in_pxs
-        grid = np.full((grid_size, grid_size), False)  # array of boolean values representing pixels
+        grid = np.full((grid_size, grid_size), np.False_)  # array of boolean values representing pixels
         patch_shape = (self.dot_size_in_pxs, self.dot_size_in_pxs)
 
-        # loop over dots and set the corresponding pixels to True
+        # loop over dots and set the corresponding pixels to np.True_
         for point in normalized_frame:
             # if dot falls outside visible region (stencil), do not draw it
             if np.sum((point-0.5)**2) <= self.stencil_radius_in_norm_units**2:
