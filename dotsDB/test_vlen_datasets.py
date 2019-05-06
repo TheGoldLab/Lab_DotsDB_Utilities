@@ -3,8 +3,8 @@ import h5py
 
 filename = "test_vlen_datasets_np_bool.h5"
 
-rows = [[np.True_, np.False_],
-        [np.True_, np.True_, np.False_]]
+rows = [np.array([np.True_, np.False_]),
+        np.array([np.True_, np.True_, np.False_])]
 
 f = h5py.File(filename, 'x')  # create file, fails if exists
 
@@ -26,4 +26,4 @@ f = h5py.File(filename, 'r')
 dsetr = f["vlen_matrix"]
 
 for r in range(dsetr.shape[0]):
-    print(dsetr[r], '\n')
+    print(dsetr[r])
