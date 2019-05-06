@@ -268,14 +268,19 @@ def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number)
     :param trial_number: number for the trial to extract, should be an int >= 1
     :return: 3D numpy array, first two dims for pixels, last dim for frames
     """
+
     with h5py.File(path_to_file, 'r') as f:
         s = f[dset_name]
         g = f[group_name]
         assert (isinstance(s, h5py.Dataset) and isinstance(g, h5py.Group))
+        assert 1 <= trial_number <= s.shape[0]
+        trial = s[trial_number - 1, :]
+
         npx = g.attrs['frame_width_in_pxs']
         nf = g.attrs['num_frames']
-        #         fr = g.attrs['frame_rate']
-        trial = s[trial_number - 1, :]
+        
+        assert (npx**2)*nf == trial.size
+
     return trial.reshape((npx, npx, nf), order="F")
 
 
