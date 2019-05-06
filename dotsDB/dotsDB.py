@@ -274,12 +274,14 @@ def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number)
         g = f[group_name]
         assert (isinstance(s, h5py.Dataset) and isinstance(g, h5py.Group))
         assert 1 <= trial_number <= s.shape[0]
-        trial = s[trial_number - 1, :]
+        trial = s[trial_number - 1]
 
         npx = g.attrs['frame_width_in_pxs']
-        nf = g.attrs['num_frames']
-        
-        assert (npx**2)*nf == trial.size
+#        nf = g.attrs['num_frames']
+        nf = trial.size / (npx**2)
+#        print(npx, nf, (npx**2)*nf, s.shape, trial.shape, trial.size)
+        assert nf.is_integer()
+        nf = int(nf)
 
     return trial.reshape((npx, npx, nf), order="F")
 
