@@ -220,6 +220,24 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
     return None
 
 
+def dump_trial_as_jpg(trial_array, file_path):
+    """
+    Writes each frame from a trial as a separate .jpg file
+
+    To lump all files into a single trial.mp4 file from Linux Terminal, type:
+    $ ffmpeg -framerate 60 -i frame-%0d.jpg -c:v libx264 -profile:v high -crf 20 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -pix_fmt yuv420p trial.mp4
+
+    :param trial_array: numpy.ndarray as returned by :func:`extract_trial_as_3d_array`
+    :param file_path: (str) path up to folder included where images should be created
+    :return:
+    """
+    import imageio
+    num_frames = trial_array.shape[2]
+    for i in range(num_frames):
+        imageio.imwrite(file_path + 'frame-' + str(i) + '.jpg',
+                        trial_array[:, :, i].transpose().astype(int))
+
+
 def inspect_db(filename):
     """
     Loops recursively through all groups and datasets of an hdf5 database, and
