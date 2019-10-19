@@ -480,7 +480,7 @@ class DotsStimulus:
     """detail"""
     frame_rate = 60  # should be a multiple of 10
     """rate in Hz at which the stimulus should be interpreted"""
-    field_scale = 1.1
+    field_scale = 1.5
     """scalar by which the drawing aperture is multiplied to define actual pixel space"""
 
     def __init__(self,
@@ -492,9 +492,10 @@ class DotsStimulus:
                  num_frames,
                  diameter,
                  stencil_radius_in_vis_angle=None,
-                 pixels_per_degree=55.4612,
-                 dot_size_in_pxs=6,
-                 attached_data=None):
+                 pixels_per_degree=27.7305, # 55.4612,
+                 dot_size_in_pxs=3,  # 6,
+                 attached_data=None,
+                 cp_time=None):
         """
         :param speed: speed of dots, in deg vis. angle per sec
         :param density: nb of dots per unit area, where distance unit is deg vis. angles
@@ -506,10 +507,12 @@ class DotsStimulus:
         :param stencil_radius_in_vis_angle: radius of stencil that encloses visible dots (defaults to diameter / 2)
         :param attached_data: a list of normalized dots frames.
             this data will be used by the normalized_dots_frame_generator. If None, data will be generated)
+        :param cp_time: (float) time of change-point in seconds. If None (default), stimulus has no CP.
         :type attached_data: None or list of numpy arrays, each of shape (n, 2); where n may vary, it is the number of
             dots in the frame. Note, at this stage, dots falling outside the stencil disk need not be trimmed. The
             trimming is handled by the norm_to_pixel_frame method.
         """
+        self.cp_time = cp_time
         self.speed = speed
 
         # controls total number of dots across self.interleaves frames
@@ -597,6 +600,23 @@ class DotsStimulus:
             'frame_width_in_pxs': self.frame_width_in_pxs
         }
 
+    def cp_frame(self):
+        """
+        Finds the first frame that should be computed with the new direction of motion if
+        stimulus contains a reasonable CP time. Otherwise returns None.
+        :return: positive int or None
+        """
+        if self.cp_time is None:
+            return self.cp_time
+
+        frame_duration = 1 / DotsStimulus.frame_rate  # in seconds
+        frames = np.arange(1, self.num_frames+1)
+        endpoints = frame_duration * frames  # times at which each frame ends
+        try:
+            return frames[endpoints > self.cp_time][0]
+        except IndexError:  # self.cp_time is greater than end of trial, so no CP
+            return None
+
     def normalized_dots_frame_generator(self, max_frames=None):
         """
         Create a *generator* to generate frames of a random dots stimulus.
@@ -623,6 +643,8 @@ class DotsStimulus:
             lifetimes = np.zeros(self.num_dots_in_chunk.astype(int))
             frame_chunk = [np.random.rand(self.num_dots_in_frames[n], 2) for n in range(self.interleaves)]
             while frame_count < max_frames:
+                if frame_count == self.cp_frame() - 1:
+                    self.coh_step *= -1  # implement change of direction
                 mod_idx = np.mod(frame_count, self.interleaves)
                 ancestor = frame_chunk[mod_idx]
                 new_frame, updated_lifetimes = self.next_frame(ancestor, lifetimes[self.dots_idxs[mod_idx]])
@@ -630,6 +652,8 @@ class DotsStimulus:
                 frame_chunk[mod_idx] = new_frame
                 yield new_frame
                 frame_count += 1
+            else:
+                self.coh_step *= -1  # reset to original direction of motion when generator is exhausted
         else:
             counter = 1
             for fr in self.attached_data:
@@ -641,7 +665,7 @@ class DotsStimulus:
     def next_frame(self, present_frame, present_lifetimes):
         """
         Computes the next frame. This function mimicks dotsDrawableDotKinetogram.computeNextFrame()
-        from the `MATLAB code <https://github.com/TheGoldLab/Lab-Matlab-Control/blob/eyeDev/snow-dots/classes/drawable/dotsDrawableDotKinetogram.m>`_
+        from the `MATLAB code <https://github.com/TheGoldLab/Lab_Matlab_Control/blob/eyeDev/snow-dots/classes/drawable/dotsDrawableDotKinetogram.m>`_
 
         :param present_frame: normalized frame as handled by self.normalized_dots_frame_generator()
         :param present_lifetimes: numpy array
@@ -747,8 +771,10 @@ if __name__ == '__main__':
     5. num_frames
     6. db filename
 
-    With 0 arguments, the script appends requested datasets to given file 
+    With 0 arguments, the script appends datasets written below to given file 
     """
+
+    # 6 command line arguments were given
     if len(sys.argv) == 7:
         # speed
         try:
@@ -819,12 +845,13 @@ if __name__ == '__main__':
 
         print("--- {} seconds ---".format(time.time() - start_time))
 
+    # 0 command line arguments were given
     elif len(sys.argv) == 1:
         start_time = time.time()
         # this script adds new groups (with newly generated datasets) to an existing dotsDB HDF5 file
 
         # file name
-        file_name = '../data/test2.h5'
+        file_name = 'data/sfnTest.h5'
 
         # parameters of new datasets to create:
         params = {
@@ -833,11 +860,12 @@ if __name__ == '__main__':
             'coh_mean': [0, 30, 80],
             'coh_stdev': [10],
             'direction': ['left', 'right'],
-            'num_frames': [15],
-            'diameter': [5]
+            'num_frames': [24],
+            'diameter': [5],
+            'cp_time': [None, 0.2]
         }
 
-        num_trials = 50
+        num_trials = 1
 
         # edit params so that shorter entries are recycled
 
@@ -852,13 +880,13 @@ if __name__ == '__main__':
             params[k] *= recycle_factor
 
         import pprint
-        #pprint.pprint(params)
-        #print(num_trials)
 
         for dset_idx in range(num_comb):
             curr_dict = {k: v[dset_idx] for k, v in params.items()}
             S = DotsStimulus(**curr_dict)
-            write_stimulus_to_file(S, num_trials, file_name, create_file=(dset_idx == 0)) # only create the file at first iteration
+
+            # only create the file at first iteration
+            write_stimulus_to_file(S, num_trials, file_name, create_file=(dset_idx == 0))
 
         print("--- {} seconds ---".format(time.time() - start_time))
         
