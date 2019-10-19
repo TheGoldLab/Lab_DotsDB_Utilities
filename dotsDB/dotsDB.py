@@ -406,7 +406,8 @@ def build_group_name(stimulus):
         'stencil_radius_in_vis_angle': 'sc',
         'pixels_per_degree': 'ppd',
         'dot_size_in_pxs': 'dts',
-        'frame_width_in_pxs': 'fw'
+        'frame_width_in_pxs': 'fw',
+        'cp_time': 'cp'
     }
     return '_'.join(['%s%s' % (abbrev[key], value) for (key, value) in params.items()])
 
@@ -597,7 +598,8 @@ class DotsStimulus:
             'stencil_radius_in_vis_angle': self.stencil_radius_in_vis_angle,
             'pixels_per_degree': self.pixels_per_degree,
             'dot_size_in_pxs': self.dot_size_in_pxs,
-            'frame_width_in_pxs': self.frame_width_in_pxs
+            'frame_width_in_pxs': self.frame_width_in_pxs,
+            'cp_time': self.cp_time if self.cp_time is not None else -1
         }
 
     def cp_frame(self):
@@ -642,8 +644,13 @@ class DotsStimulus:
             frame_count = 0
             lifetimes = np.zeros(self.num_dots_in_chunk.astype(int))
             frame_chunk = [np.random.rand(self.num_dots_in_frames[n], 2) for n in range(self.interleaves)]
+
+            cp_flag = self.cp_frame()
+            if cp_flag is not None:
+                cp_flag -= 1
+
             while frame_count < max_frames:
-                if frame_count == self.cp_frame() - 1:
+                if frame_count == cp_flag:
                     self.coh_step *= -1  # implement change of direction
                 mod_idx = np.mod(frame_count, self.interleaves)
                 ancestor = frame_chunk[mod_idx]
@@ -851,7 +858,7 @@ if __name__ == '__main__':
         # this script adds new groups (with newly generated datasets) to an existing dotsDB HDF5 file
 
         # file name
-        file_name = 'data/sfnTest.h5'
+        file_name = '/home/adrian/Git/GitHub/work/Motion_Energy/Python/modules/dots_db/data/sfnTest.h5'
 
         # parameters of new datasets to create:
         params = {
