@@ -168,6 +168,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
     :type append_to_group: bool
     :param pre_generated_stimulus: each entry in this list will be used as DotsStimulus.attached_data.
     :type pre_generated_stimulus: list of lists of numpy arrays.
+    :param group_name:
     :rtype: None
     """
     stim_params = stim.export_params()
@@ -877,6 +878,21 @@ if __name__ == '__main__':
         # edit params so that shorter entries are recycled
 
         # get total number of combinations
+        # todo: BUG HERE!
+        """
+        Look at 7th iteration which is a repeat below
+        >>> 12 // 2
+6
+>>> [None, 0.2] * 6
+[None, 0.2, None, 0.2, None, 0.2, None, 0.2, None, 0.2, None, 0.2]
+>>> ['left', 'right'] * 6
+['left', 'right', 'left', 'right', 'left', 'right', 'left', 'right', 'left', 'right', 'left', 'right']
+>>> 12 // 3
+4
+>>> [0,30,80]*4
+[0, 30, 80, 0, 30, 80, 0, 30, 80, 0, 30, 80]
+
+        """
         num_comb = 1
         for v in params.values():
             num_comb *= len(v)
