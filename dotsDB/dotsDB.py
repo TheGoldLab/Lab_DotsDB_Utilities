@@ -29,6 +29,8 @@ Details on how such pixel frame is written to HDF5 file may be found in the docu
 :func:`write_stimulus_to_file` function
 
 """
+from collections import OrderedDict
+from itertools import product as iterprod
 import numpy as np
 import pandas as pd
 import h5py
@@ -862,50 +864,30 @@ if __name__ == '__main__':
         file_name = '/home/adrian/Git/GitHub/work/Motion_Energy/Python/modules/dots_db/data/sfnTest.h5'
 
         # parameters of new datasets to create:
-        params = {
+        params = OrderedDict({
             'speed': [5],
             'density': [90],
-            'coh_mean': [0, 30, 80],
+            'coh_mean': [0, 30, 50, 80, 100],
             'coh_stdev': [10],
             'direction': ['left', 'right'],
             'num_frames': [24],
             'diameter': [5],
             'cp_time': [None, 0.2]
-        }
+        })
 
         num_trials = 1
 
         # edit params so that shorter entries are recycled
 
-        # get total number of combinations
-        # todo: BUG HERE!
-        """
-        Look at 7th iteration which is a repeat below
-        >>> 12 // 2
-6
->>> [None, 0.2] * 6
-[None, 0.2, None, 0.2, None, 0.2, None, 0.2, None, 0.2, None, 0.2]
->>> ['left', 'right'] * 6
-['left', 'right', 'left', 'right', 'left', 'right', 'left', 'right', 'left', 'right', 'left', 'right']
->>> 12 // 3
-4
->>> [0,30,80]*4
-[0, 30, 80, 0, 30, 80, 0, 30, 80, 0, 30, 80]
-
-        """
-        num_comb = 1
-        for v in params.values():
-            num_comb *= len(v)
-
-        # recycle values 
-        for k, v in params.items():
-            recycle_factor = num_comb // len(v)
-            params[k] *= recycle_factor
+        # I found inspiration here: https://stackoverflow.com/a/12913336
+        dummy_list = list(params.values())
+        combinations = list(iterprod(*dummy_list))
+        num_comb = len(combinations)
 
         import pprint
 
         for dset_idx in range(num_comb):
-            curr_dict = {k: v[dset_idx] for k, v in params.items()}
+            curr_dict = {k: combinations[dset_idx][ix] for ix, k in enumerate(params.keys())}
             S = DotsStimulus(**curr_dict)
 
             # only create the file at first iteration
