@@ -237,8 +237,12 @@ def dump_trial_as_jpg(trial_array, file_path):
     import imageio
     num_frames = trial_array.shape[2]
     for i in range(num_frames):
-        imageio.imwrite(file_path + 'frame-' + str(i) + '.jpg',
-                        trial_array[:, :, i].transpose().astype(int))
+        try:
+            imageio.imwrite(file_path + 'frame-' + str(i) + '.jpg',
+                            trial_array[:, :, i].transpose().astype(int))
+        except ValueError:
+            imageio.imwrite(file_path + 'frame-' + str(i) + '.jpg',
+                            trial_array[:, :, i])
 
 
 def inspect_db(filename):
