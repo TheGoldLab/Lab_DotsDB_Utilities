@@ -191,32 +191,39 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
         if group_exists:
             raise ValueError(f"group {group_name} already exists in file")
 
-    group = f[group_name] if group_exists else f.create_group(group_name)
+    if group_exists:
+        group = f[group_name]
+    else:
+        group = f.create_group(group_name)
+        # add all parameters as attributes
+        stim_params = stim.export_params()
+        for k, v in stim_params.items():
+            group.attrs.__setitem__(k, v)
 
     # generate stimulus upfront
     use_pre_generated_stimulus = (pre_generated_stimulus is not None)
     if use_pre_generated_stimulus:
         assert len(pre_generated_stimulus) == num_of_trials
 
-    if group_exists:
+    try:
         dset = group['px']
-    else:
-        # add all parameters as attributes
-        stim_params = stim.export_params()
-        for k, v in stim_params.items():
-            group.attrs.__setitem__(k, v)
-
+    except KeyError:
         # create dataset with variable length (because each trial may have a different number of frames)
         vlen_data_type = h5py.special_dtype(vlen=np.bool_)
         dset = group.create_dataset("px",
-                                    (num_of_trials,),
+                                    (max_trials,),
                                     compression="gzip",
-                                    maxshape=(max_trials, None),
                                     compression_opts=9,
                                     fletcher32=True,
                                     dtype=vlen_data_type)
 
-    offset = len(dset)
+    def get_ix(dd):
+        """return first index in dataset corresponding to an empty entry"""
+        for i in range(len(dd)):
+            if len(dd[i]) == 0:
+                return i
+
+    offset = get_ix(dset)
 
     for t in range(num_of_trials):
         if use_pre_generated_stimulus:
