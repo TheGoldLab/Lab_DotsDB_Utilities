@@ -212,6 +212,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
         vlen_data_type = h5py.special_dtype(vlen=np.bool_)
         dset = group.create_dataset("px",
                                     (max_trials,),
+                                    maxshape=(None,),
                                     compression="gzip",
                                     compression_opts=9,
                                     fletcher32=True,
@@ -219,20 +220,36 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
 
     def get_ix(dd):
         """return first index in dataset corresponding to an empty entry"""
-        for i in range(len(dd)):
+        old_length = len(dd)
+        for i in range(old_length):
             if len(dd[i]) == 0:
                 return i
+        else:  # if this is reached, dataset is full and needs to be resized
+            print(f'doubling length of dset {dd.name} in get_ix()')
+            dd.resize((2*old_length,))
+            return old_length
 
     offset = get_ix(dset)
 
     for t in range(num_of_trials):
-        if use_pre_generated_stimulus:
-            stim.attached_data = pre_generated_stimulus[t]
+        try:
+            if use_pre_generated_stimulus:
+                stim.attached_data = pre_generated_stimulus[t]
+        except TypeError:
+            print(f'pb with dataset {dset.name}. use_pre_generated_stimulus is {use_pre_generated_stimulus}')
+            raise
 
         frames_seq = [flatten_pixel_frame(
             stim.norm_to_pixel_frame(fr)
             ) for fr in list(stim.normalized_dots_frame_generator())]
-        dset[t+offset] = np.concatenate(frames_seq, axis=None)
+
+        try:
+            dset[t+offset] = np.concatenate(frames_seq, axis=None)
+        except IndexError:
+            prior_length = len(dset)
+            print(f'doubling length of dset {dset.name}')
+            dset.resize((2*prior_length,))
+            dset[t + offset] = np.concatenate(frames_seq, axis=None)
 
     f.flush()
     f.close()
