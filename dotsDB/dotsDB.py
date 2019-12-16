@@ -227,6 +227,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, create_file=True, appe
         else:  # if this is reached, dataset is full and needs to be resized
             print(f'doubling length of dset {dd.name} in get_ix()')
             dd.resize((2*old_length,))
+            print(f'old length {old_length}, new length {len(dd)}')
             return old_length
 
     offset = get_ix(dset)
