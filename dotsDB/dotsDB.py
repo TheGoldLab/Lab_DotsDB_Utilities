@@ -794,7 +794,7 @@ if __name__ == '__main__':
         params = OrderedDict({
             'speed': [5],
             'density': [150],
-            'coh_mean': [20],
+            'coh_mean': [40],
             'coh_stdev': [10],
             'direction': ['left'],
             'num_frames': [24],
