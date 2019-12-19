@@ -386,12 +386,16 @@ class DotsStimulus:
         Right now, the main way to generate a stimulus is to use the generator \
         :func:`DotsStimulus.normalized_dots_frame_generator`
     """
+    
     interleaves = 3
     """size of the cycle of interleaved frames"""
+
     limit_life_time = True
     """detail"""
+
     frame_rate = 60  # should be a multiple of 10
     """rate in Hz at which the stimulus should be interpreted"""
+
     field_scale = 1.1
     """scalar by which the drawing aperture is multiplied to define actual pixel space"""
 
@@ -593,9 +597,20 @@ class DotsStimulus:
         num_dots = present_frame.shape[0]
 
         # select coherence stochastically, and cap at 100% max
-        coherence = np.abs(np.random.normal(self.coh_mean, self.coh_stdev))
-        if coherence > 100:
+        coherence = np.random.normal(self.coh_mean, self.coh_stdev)
+
+        # code below implements the flipDir=true variant of snow-dots in MATLAB
+        if coherence < -100:
+            coherence = -100
+        elif coherence > 100:
             coherence = 100
+
+        if coherence < 0:
+            tmp_coh_step = -self.coh_step
+        else:
+            tmp_coh_step = self.coh_step
+
+        coherence = np.abs(coherence)
 
         # select number of coherent dots in this frame stochastically
         num_coh_dots = np.random.binomial(num_dots, coherence / 100)
@@ -635,7 +650,7 @@ class DotsStimulus:
 
             # update horizontal position of coherent dots with appropriate coherent motion step
             lifetime_ordered_dots.loc[lifetime_ordered_dots['is_coherent'],
-                                      'y'] += self.coh_step
+                                      'y'] += tmp_coh_step
 
             # draw random positions for vertical position of dots which will be wrapped
             num_wrap = lifetime_ordered_dots.loc[
