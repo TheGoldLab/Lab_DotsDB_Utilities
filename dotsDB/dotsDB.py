@@ -794,15 +794,15 @@ if __name__ == '__main__':
         params = OrderedDict({
             'speed': [5],
             'density': [150],
-            'coh_mean': [0],
+            'coh_mean': [20],
             'coh_stdev': [10],
-            'direction': ['left', 'right'],
+            'direction': ['left'],
             'num_frames': [24],
             'diameter': [8],
-            'cp_time': [None]
+            'cp_time': [.2]
         })
 
-        num_trials = 500
+        num_trials = 100
 
         # edit params so that shorter entries are recycled
 
