@@ -36,7 +36,7 @@ import pandas as pd
 import h5py
 import time
 import sys
-
+import os
 
 """--------------------- DISPLAY FUNCTIONS ------------------------"""
 
@@ -788,12 +788,13 @@ if __name__ == '__main__':
 
         # file name
         file_name = '/home/adrian/dotsDB_data/lab_meeting_20Dec2019.h5'
+        file_does_not_exist = not os.path.exists(file_name)
 
         # parameters of new datasets to create:
         params = OrderedDict({
             'speed': [5],
             'density': [150],
-            'coh_mean': [20, 40],
+            'coh_mean': [0],
             'coh_stdev': [10],
             'direction': ['left', 'right'],
             'num_frames': [24],
@@ -801,7 +802,7 @@ if __name__ == '__main__':
             'cp_time': [None]
         })
 
-        num_trials = 100
+        num_trials = 500
 
         # edit params so that shorter entries are recycled
 
@@ -817,7 +818,7 @@ if __name__ == '__main__':
             S = DotsStimulus(**curr_dict)
 
             # only create the file at first iteration
-            write_stimulus_to_file(S, num_trials, file_name, create_file=(dset_idx == 0))
+            write_stimulus_to_file(S, num_trials, file_name, create_file=file_does_not_exist)
 
         print("--- {} seconds ---".format(time.time() - start_time))
         
