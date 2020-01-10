@@ -38,6 +38,8 @@ import time
 import sys
 import os
 
+DEBUG = False
+
 """--------------------- DISPLAY FUNCTIONS ------------------------"""
 
 
@@ -203,14 +205,12 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
         for k, v in stim_params.items():
             group.attrs.__setitem__(k, v)
 
-    # generate stimulus upfront
     use_pre_generated_stimulus = (pre_generated_stimulus is not None)
     if use_pre_generated_stimulus:
         assert len(pre_generated_stimulus) == num_of_trials
 
     try:
         dset = group['px']
-        pdset = group['paramdset']
     except KeyError:
         if initial_shape is None:
             initial_shape = num_of_trials
@@ -223,22 +223,50 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
                                     compression_opts=9,
                                     fletcher32=True,
                                     dtype=vlen_data_type)
+
+    try:
+        pdset = group['paramdset']
+    except KeyError:
+        if initial_shape is None:
+            initial_shape = num_of_trials
         # create dataset for parameter values, this one has fixed width
         param_columns = ['timestamp', 'coherence', 'endDirection', 'numberFramesPreCP', 'numberFramesPostCP']
         pdset = group.create_dataset("paramdset",
                                      (initial_shape, len(param_columns)),
-                                     maxshape=(None,),
+                                     maxshape=(None, len(param_columns)),
                                      compression="gzip",
                                      compression_opts=9,
                                      fletcher32=True,
                                      dtype='f')
 
     def get_ix(dd):
-        """return first index in dataset corresponding to an empty entry"""
+        """return first row index in dataset corresponding to an empty row. If dataset has no dimension (i.e.
+        dd.shape = (n,), then the index runs along the single axis."""
+        is_unidimensional = len(dd.shape) == 1
         old_length = len(dd)
+        global DEBUG
+        if DEBUG:
+            print(f'dataset {dd.name} with shape {dd.shape}')
+            print(f'length {old_length}')
         for i in range(old_length):
-            if len(dd[i]) == 0:
-                return i
+            if DEBUG:
+                print(f'index i={i}')
+            if is_unidimensional:
+                if DEBUG:
+                    print(dd[i])
+                if len(dd[i]) == 0:
+                    return i
+            else:
+                if DEBUG:
+                    # print(type(dd[i, :]))
+                    print(dd[i, :])
+                #     print(len(dd[i, :]))
+                #     DEBUG = False
+                if dd[i, :].sum() == 0:
+                    if DEBUG:
+                        print(f'sum is 0: {dd[i, :]}')
+                    return i
+
         # if this is reached, dataset is full and needs to be resized
         print(f'doubling length of dset {dd.name} in get_ix()')
 
@@ -248,12 +276,14 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
             dd.resize((2*old_length, dd.shape[1]))
         except IndexError:  # occurs if dataset doesn't have a second axis
             dd.resize((2 * old_length,))
+
         print(f'old length {old_length}, new length {len(dd)}')
         return old_length
 
     offset = get_ix(dset)
     # side effect of get_ix sought below, i.e. resizing if needed
-    assert offset == get_ix(pdset), "px and paramdset datasets don't seem to have matching first dimensions"
+    side_offset = get_ix(pdset)
+    assert offset == side_offset, f"px ({offset}) and paramdset ({side_offset}) datasets don't match"
 
     for t in range(num_of_trials):
         try:
@@ -269,6 +299,8 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
 
         try:
             dset[t+offset] = np.concatenate(frames_seq, axis=None)
+            if DEBUG:
+                print(f'wrote to px dataset at index {t + offset}')
         except IndexError:  # normally this case should never occur, thanks to the resizing provided by get_ix()
             raise
             # prior_length = len(dset)
@@ -276,7 +308,19 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
             # dset.resize((2*prior_length,))
             # dset[t + offset] = np.concatenate(frames_seq, axis=None)
 
-        pdset[t+offset, :] = param_dset_vals[t].values()
+        if DEBUG:
+            print('BEFORE')
+        # print(f'param_dset_vals[{t}] = {param_dset_vals[t]}')
+        # print(f'values to be written: {param_dset_vals[t].values()}')
+        # todo: bug with the following line.
+        ppparams_to_write = list(param_dset_vals[t].values())
+        pdset[t+offset, :] = ppparams_to_write
+        if DEBUG:
+            print('AFTER')
+
+        if DEBUG:
+            print(f'wrote to paramdset dataset at index {t+offset}')
+            print(f'values written: {param_dset_vals[t].values()}')
 
     f.flush()
     f.close()
