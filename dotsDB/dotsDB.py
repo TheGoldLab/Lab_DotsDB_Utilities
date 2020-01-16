@@ -254,12 +254,8 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
             if is_unidimensional:
                 if DEBUG:
                     print(dd[i])
-                try:
-                    if len(dd[i]) == 0:
-                        return i
-                except TypeError:
-                    if dd[i] == 0:
-                        return i
+                if len(dd[i]) == 0:
+                    return i
             else:
                 if DEBUG:
                     # print(type(dd[i, :]))
