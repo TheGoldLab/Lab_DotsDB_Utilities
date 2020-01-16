@@ -409,7 +409,9 @@ def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number,
         p = f[param_dset_name]
         assert isinstance(s, h5py.Dataset) and isinstance(g, h5py.Group) and isinstance(p, h5py.Dataset)
         assert 1 <= trial_number <= s.shape[0]
-        assert s.shape[0] == p.shape[0]
+
+        # todo: AssertionError returned for line below
+        assert s.shape[0] == p.shape[0], f'group {group_name}, px.shape {s.shape}, paramdset.shape {p.shape}'
         trial = s[trial_number - 1]
         params_dict = OrderedDict({
             'timestamp': p[trial_number - 1, 0],
