@@ -38,7 +38,7 @@ import time
 import sys
 import os
 
-DEBUG = True
+DEBUG = False
 
 """--------------------- DISPLAY FUNCTIONS ------------------------"""
 
@@ -221,8 +221,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
                                     maxshape=(None,),
                                     compression="gzip",
                                     compression_opts=9,
-                                    fletcher32=True,
-                                    dtype=np.dtype('B'))
+                                    fletcher32=True)
 
     try:
         pdset = group['paramdset']
