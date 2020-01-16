@@ -215,13 +215,14 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
         if initial_shape is None:
             initial_shape = num_of_trials
         # create dataset with variable length (because each trial may have a different number of frames)
-        # vlen_data_type = h5py.special_dtype(vlen=np.bool_)
+        vlen_data_type = h5py.special_dtype(vlen=np.bool_)
         dset = group.create_dataset("px",
                                     (initial_shape,),
                                     maxshape=(None,),
                                     compression="gzip",
                                     compression_opts=9,
-                                    fletcher32=True)
+                                    fletcher32=True,
+                                    dtype=vlen_data_type)
 
     try:
         pdset = group['paramdset']
@@ -297,9 +298,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
             ) for fr in list(stim.normalized_dots_frame_generator())]
 
         try:
-            numpy_array = np.concatenate(frames_seq, axis=None)
-            binary_encoding = bytes(numpy_array)
-            dset[t+offset] = binary_encoding
+            dset[t+offset] = np.concatenate(frames_seq, axis=None)
             if DEBUG:
                 print(f'wrote to px dataset at index {t + offset}')
         except IndexError:  # normally this case should never occur, thanks to the resizing provided by get_ix()
@@ -413,8 +412,7 @@ def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number,
 
         # todo: AssertionError returned for line below
         assert s.shape[0] == p.shape[0], f'group {group_name}, px.shape {s.shape}, paramdset.shape {p.shape}'
-        trial_binary_form = s[trial_number - 1]
-        trial = np.frombuffer(trial_binary_form, dtype=bool)
+        trial = s[trial_number - 1]
         params_dict = OrderedDict({
             'timestamp': p[trial_number - 1, 0],
             'coherence': p[trial_number - 1, 1],
