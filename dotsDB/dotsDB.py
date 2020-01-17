@@ -230,6 +230,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
             initial_shape = num_of_trials
         # create dataset for parameter values, this one has fixed width
         # param_columns = ['timestamp', 'coherence', 'endDirection', 'numberFramesPreCP', 'numberFramesPostCP']
+        # ref: http://docs.h5py.org/en/stable/strings.html
         pdset = group.create_dataset("paramdset",
                                      (initial_shape,),
                                      maxshape=(None,),
@@ -240,7 +241,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
         dd.shape = (n,), then the index runs along the single axis."""
         is_unidimensional = len(dd.shape) == 1
         old_length = len(dd)
-        global DEBUG
+        # global DEBUG
         if DEBUG:
             print(f'dataset {dd.name} with shape {dd.shape}')
             print(f'length {old_length}')
@@ -305,10 +306,10 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
             # dset[t + offset] = np.concatenate(frames_seq, axis=None)
 
         if DEBUG:
-            print('BEFORE')
-        # print(f'param_dset_vals[{t}] = {param_dset_vals[t]}')
-        # print(f'values to be written: {param_dset_vals[t].values()}')
-        pdset[t+offset] = param_dset_vals[t]
+            print(f'type and content of param_dset_vals[{t}]: {type(param_dset_vals[t])}; {param_dset_vals[t]}')
+
+        pdset[t+offset] = bytes(param_dset_vals[t], 'ascii')
+
         if DEBUG:
             print('AFTER')
 
@@ -407,7 +408,7 @@ def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number,
         assert s.shape[0] == p.shape[0], f'group {group_name}, px.shape {s.shape}, paramdset.shape {p.shape}'
         trial = s[trial_number - 1]
         params_dict = OrderedDict({
-            'trialID': p[trial_number - 1],
+            'trialID': p[trial_number - 1].decode(),  # binary-encoded ascii string needs to be decoded to UTF-8
         })
         npx = g.attrs['frame_width_in_pxs']
 #        nf = g.attrs['num_frames']
