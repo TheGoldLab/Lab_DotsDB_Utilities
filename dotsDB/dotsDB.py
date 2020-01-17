@@ -166,8 +166,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
     :param num_of_trials: number of trials to generate
     :param filename: path including file name with extension
     :type filename: str
-    :param param_dset_vals: list of dicts with keys: 'timestamp', 'coherence', 'endDirection', 'numberFramesPreCP',
-                            'numberFramesPostCP'. Length of list should equal num_of_trials.
+    :param param_dset_vals: list of unique trial identifiers. Length of list should equal num_of_trials.
     :param create_file: whether to create a new file if file doesn't exist or not (default=True)
     :type create_file: bool
     :param append_to_group: if False and group exists, raises ValueError
@@ -230,14 +229,14 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
         if initial_shape is None:
             initial_shape = num_of_trials
         # create dataset for parameter values, this one has fixed width
-        param_columns = ['timestamp', 'coherence', 'endDirection', 'numberFramesPreCP', 'numberFramesPostCP']
+        # param_columns = ['timestamp', 'coherence', 'endDirection', 'numberFramesPreCP', 'numberFramesPostCP']
         pdset = group.create_dataset("paramdset",
-                                     (initial_shape, len(param_columns)),
-                                     maxshape=(None, len(param_columns)),
+                                     (initial_shape,),
+                                     maxshape=(None,),
                                      compression="gzip",
                                      compression_opts=9,
                                      fletcher32=True,
-                                     dtype='f')
+                                     dtype='S')
 
     def get_ix(dd):
         """return first row index in dataset corresponding to an empty row. If dataset has no dimension (i.e.
@@ -312,15 +311,13 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
             print('BEFORE')
         # print(f'param_dset_vals[{t}] = {param_dset_vals[t]}')
         # print(f'values to be written: {param_dset_vals[t].values()}')
-        # todo: bug with the following line.
-        ppparams_to_write = list(param_dset_vals[t].values())
-        pdset[t+offset, :] = ppparams_to_write
+        pdset[t+offset] = param_dset_vals[t]
         if DEBUG:
             print('AFTER')
 
         if DEBUG:
             print(f'wrote to paramdset dataset at index {t+offset}')
-            print(f'values written: {param_dset_vals[t].values()}')
+            print(f'value written: {param_dset_vals[t]}')
 
     f.flush()
     f.close()
@@ -395,12 +392,11 @@ def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number,
     :param dset_name: string for name of dataset in hdf5 file (full path within the file)
     :param group_name: string for name of group that contains the dataset in hdf5 file (full path within the file)
     :param trial_number: number for the trial to extract, should be an int >= 1
-    :param param_dset_name: (str) name of dataset that contains parameters information. Columns in that dataset
-                            correspond to 'timestamp', 'coherence', 'endDirection', 'numberFramesPreCP' and
-                            'numberFramesPostCP'
+    :param param_dset_name: (str) name of dataset that contains trial identifier. The single dimension in that dataset
+                            corresponds to 'trialID', e.g. '2020_01_06_14_05_00221'
     :return: tuple with
         * 3D numpy array, first two dims for pixels, last dim for frames
-        * OrderedDict with keys: 'timestamp', 'coherence', 'endDirection', 'numberFramesPreCP', 'numberFramesPostCP'
+        * OrderedDict with keys: 'trialID'
     """
 
     with h5py.File(path_to_file, 'r') as f:
@@ -414,11 +410,7 @@ def extract_trial_as_3d_array(path_to_file, dset_name, group_name, trial_number,
         assert s.shape[0] == p.shape[0], f'group {group_name}, px.shape {s.shape}, paramdset.shape {p.shape}'
         trial = s[trial_number - 1]
         params_dict = OrderedDict({
-            'timestamp': p[trial_number - 1, 0],
-            'coherence': p[trial_number - 1, 1],
-            'endDirection': p[trial_number - 1, 2],
-            'numberFramesPreCP': p[trial_number - 1, 3],
-            'numberFramesPostCP': p[trial_number - 1, 4]
+            'trialID': p[trial_number - 1],
         })
         npx = g.attrs['frame_width_in_pxs']
 #        nf = g.attrs['num_frames']
