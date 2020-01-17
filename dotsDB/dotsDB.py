@@ -233,10 +233,7 @@ def write_stimulus_to_file(stim, num_of_trials, filename, param_dset_vals, creat
         pdset = group.create_dataset("paramdset",
                                      (initial_shape,),
                                      maxshape=(None,),
-                                     compression="gzip",
-                                     compression_opts=9,
-                                     fletcher32=True,
-                                     dtype='S')
+                                     dtype="S22")
 
     def get_ix(dd):
         """return first row index in dataset corresponding to an empty row. If dataset has no dimension (i.e.
