@@ -1,2 +1,5 @@
 .idea/*
 .ipynb_checkpoints/*
+__pycache__/*
+dotsDB/__pycache__/*
+docs/build/*
