@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dotsDB.dotsDB Module &mdash; dotsDB 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="build_group_name" href="api/dotsDB.dotsDB.build_group_name.html" />
+    <link rel="prev" title="Welcome to dotsDB’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> dotsDB
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">dotsDB.dotsDB Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#logic">Logic</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-word-on-pixel-frames-and-their-hdf5-storage">A word on pixel frames and their HDF5 storage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.build_group_name.html">build_group_name</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.dump_trial_as_jpg.html">dump_trial_as_jpg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.extract_trial_as_3d_array.html">extract_trial_as_3d_array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.flatten_pixel_frame.html">flatten_pixel_frame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.inspect_db.html">inspect_db</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.pixel_to_patch.html">pixel_to_patch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.point_to_pixel.html">point_to_pixel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.set_patch.html">set_patch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.wrap_norm_coord.html">wrap_norm_coord</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.write_stimulus_to_file.html">write_stimulus_to_file</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.DotsStimulus.html">DotsStimulus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#variables">Variables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/dotsDB.dotsDB.DEBUG.html">DEBUG</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#class-inheritance-diagram">Class Inheritance Diagram</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dotsDB</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>dotsDB.dotsDB Module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/dotsDB.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-dotsDB.dotsDB">
+<span id="dotsdb-dotsdb-module"></span><h1>dotsDB.dotsDB Module<a class="headerlink" href="#module-dotsDB.dotsDB" title="Permalink to this headline">¶</a></h1>
+<p>The goal of this module is to provide a standard API to manage databases of random dots stimuli.
+The format for the databases is HDF5. The main functionalities are:</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt>create databases of random dots stimuli</dt><dd><p>either by generating the stimuli
+or by providing existing stimuli</p>
+</dd>
+</dl>
+</li>
+<li><p>append data to existing db</p></li>
+<li><p>inspect db (including parameters and other metadata about the stimuli)</p></li>
+<li><p>extract data from db</p></li>
+</ol>
+<div class="section" id="logic">
+<h2>Logic<a class="headerlink" href="#logic" title="Permalink to this headline">¶</a></h2>
+<p>The idea is to generate the stimulus with a <a class="reference internal" href="api/dotsDB.dotsDB.DotsStimulus.html#dotsDB.dotsDB.DotsStimulus" title="dotsDB.dotsDB.DotsStimulus"><code class="xref py py-class docutils literal notranslate"><span class="pre">DotsStimulus</span></code></a> instance and then write it to file with the
+<a class="reference internal" href="api/dotsDB.dotsDB.write_stimulus_to_file.html#dotsDB.dotsDB.write_stimulus_to_file" title="dotsDB.dotsDB.write_stimulus_to_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">write_stimulus_to_file()</span></code></a> function.</p>
+<div class="section" id="a-word-on-pixel-frames-and-their-hdf5-storage">
+<h3>A word on pixel frames and their HDF5 storage<a class="headerlink" href="#a-word-on-pixel-frames-and-their-hdf5-storage" title="Permalink to this headline">¶</a></h3>
+<p>Within this module, every pixel frame is handled as a 2D numpy array of booleans. The (i,j) entry in the array
+corresponds to the pixel at position (i,j) in space.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For pixel with coordinates (i,j), small i corresponds to top, large i to bottom. Small y corresponds to left,     large y to right.</p>
+</div>
+<p>Details on how such pixel frame is written to HDF5 file may be found in the documentation for the <a class="reference internal" href="api/dotsDB.dotsDB.write_stimulus_to_file.html#dotsDB.dotsDB.write_stimulus_to_file" title="dotsDB.dotsDB.write_stimulus_to_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">write_stimulus_to_file()</span></code></a> function</p>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.build_group_name.html#dotsDB.dotsDB.build_group_name" title="dotsDB.dotsDB.build_group_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_group_name</span></code></a>(sstimulus)</p></td>
+<td><p>Grabs the parameters from the given <a class="reference internal" href="api/dotsDB.dotsDB.DotsStimulus.html#dotsDB.dotsDB.DotsStimulus" title="dotsDB.dotsDB.DotsStimulus"><code class="xref py py-class docutils literal notranslate"><span class="pre">DotsStimulus</span></code></a> instance and builds a string out of them</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.dump_trial_as_jpg.html#dotsDB.dotsDB.dump_trial_as_jpg" title="dotsDB.dotsDB.dump_trial_as_jpg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump_trial_as_jpg</span></code></a>(trial_array, file_path)</p></td>
+<td><p>Writes each frame from a trial as a separate .jpg file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.extract_trial_as_3d_array.html#dotsDB.dotsDB.extract_trial_as_3d_array" title="dotsDB.dotsDB.extract_trial_as_3d_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_trial_as_3d_array</span></code></a>(path_to_file, …)</p></td>
+<td><p>extracts a specific trial from the database and returns it as a 3D matrix of pixel frames Uses context manager to open the file in read-only mode TODO: better explain the orientation of the dots (what is left-right, what is bottom-up)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.flatten_pixel_frame.html#dotsDB.dotsDB.flatten_pixel_frame" title="dotsDB.dotsDB.flatten_pixel_frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flatten_pixel_frame</span></code></a>(f)</p></td>
+<td><p>a 2D pixel frame is flattened, whereby <strong>rows are concatenated</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.inspect_db.html#dotsDB.dotsDB.inspect_db" title="dotsDB.dotsDB.inspect_db"><code class="xref py py-obj docutils literal notranslate"><span class="pre">inspect_db</span></code></a>(filename)</p></td>
+<td><p>Loops recursively through all groups and datasets of an hdf5 database, and displays their attributes (and shape for datasets) file is opened in read-only mode with context manager</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.pixel_to_patch.html#dotsDB.dotsDB.pixel_to_patch" title="dotsDB.dotsDB.pixel_to_patch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pixel_to_patch</span></code></a>(px_idxs, patch_dims, grid_dims)</p></td>
+<td><p>Converts the coords of the center of a dot in pixel space into a patch of pixels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.point_to_pixel.html#dotsDB.dotsDB.point_to_pixel" title="dotsDB.dotsDB.point_to_pixel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">point_to_pixel</span></code></a>(coord, grid_dims)</p></td>
+<td><p>converts the coordinates of a dot from normalized space to pixel space</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.set_patch.html#dotsDB.dotsDB.set_patch" title="dotsDB.dotsDB.set_patch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_patch</span></code></a>(patch_top_left_corner, patch_dims, …)</p></td>
+<td><p>Sets the values in grid that correspond to the patch location to <a href="#id1"><span class="problematic" id="id2">np.True_</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.wrap_norm_coord.html#dotsDB.dotsDB.wrap_norm_coord" title="dotsDB.dotsDB.wrap_norm_coord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wrap_norm_coord</span></code></a>(to_wrap)</p></td>
+<td><p>if to_wrap is not in [0,1), wraps it around :param to_wrap: a number :return: decimal part of the number</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.write_stimulus_to_file.html#dotsDB.dotsDB.write_stimulus_to_file" title="dotsDB.dotsDB.write_stimulus_to_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_stimulus_to_file</span></code></a>(stim, num_of_trials, …)</p></td>
+<td><p>Write the stimulus generated by (or attached to) a <a class="reference internal" href="api/dotsDB.dotsDB.DotsStimulus.html#dotsDB.dotsDB.DotsStimulus" title="dotsDB.dotsDB.DotsStimulus"><code class="xref py py-class docutils literal notranslate"><span class="pre">DotsStimulus</span></code></a> instance to HDF5 file.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.DotsStimulus.html#dotsDB.dotsDB.DotsStimulus" title="dotsDB.dotsDB.DotsStimulus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DotsStimulus</span></code></a>(speed, density, coh_mean, …)</p></td>
+<td><p>Object used to handle a single trial of the random dots stimulus.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OrderedDict</span></code></p></td>
+<td><p>Dictionary that remembers insertion order</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">iterprod</span></code></p></td>
+<td><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">itertools.product</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="variables">
+<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/dotsDB.dotsDB.DEBUG.html#dotsDB.dotsDB.DEBUG" title="dotsDB.dotsDB.DEBUG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEBUG</span></code></a></p></td>
+<td><p>——————— DISPLAY FUNCTIONS ————————</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="class-inheritance-diagram">
+<h2>Class Inheritance Diagram<a class="headerlink" href="#class-inheritance-diagram" title="Permalink to this headline">¶</a></h2>
+<div class="graphviz"><img src="_images/inheritance-c60a1cfecce9e15858c95dc245a6b8a585f4f889.png" alt="Inheritance diagram of dotsDB.dotsDB.DotsStimulus" usemap="#inheritance2be41abf41" class="inheritance graphviz" /></div>
+<map id="inheritance2be41abf41" name="inheritance2be41abf41">
+<area shape="rect" id="node1" href="api/dotsDB.dotsDB.DotsStimulus.html#dotsDB.dotsDB.DotsStimulus" target="_top" title="Object used to handle a single trial of the random dots stimulus." alt="" coords="5,5,115,31"/>
+</map></div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api/dotsDB.dotsDB.build_group_name.html" class="btn btn-neutral float-right" title="build_group_name" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to dotsDB’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Adrian Radillo
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

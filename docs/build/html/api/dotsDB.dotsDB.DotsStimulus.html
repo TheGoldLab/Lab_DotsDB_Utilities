@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>DotsStimulus &mdash; dotsDB 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="write_stimulus_to_file" href="dotsDB.dotsDB.write_stimulus_to_file.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> dotsDB
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../dotsDB.html">dotsDB.dotsDB Module</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../dotsDB.html#logic">Logic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dotsDB.html#functions">Functions</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../dotsDB.html#classes">Classes</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">DotsStimulus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dotsDB.html#variables">Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dotsDB.html#class-inheritance-diagram">Class Inheritance Diagram</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dotsDB</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../dotsDB.html">dotsDB.dotsDB Module</a> &raquo;</li>
+        
+      <li>DotsStimulus</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/dotsDB.dotsDB.DotsStimulus.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="dotsstimulus">
+<h1>DotsStimulus<a class="headerlink" href="#dotsstimulus" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="dotsDB.dotsDB.DotsStimulus">
+<em class="property">class </em><code class="descclassname">dotsDB.dotsDB.</code><code class="descname">DotsStimulus</code><span class="sig-paren">(</span><em>speed</em>, <em>density</em>, <em>coh_mean</em>, <em>coh_stdev</em>, <em>direction</em>, <em>num_frames</em>, <em>diameter</em>, <em>stencil_radius_in_vis_angle=None</em>, <em>pixels_per_degree=27.7305</em>, <em>dot_size_in_pxs=3</em>, <em>attached_data=None</em>, <em>cp_time=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Object used to handle a single trial of the random dots stimulus.
+A trial consists in a sequence of frames.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Right now, the main way to generate a stimulus is to use the generator         <a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.normalized_dots_frame_generator" title="dotsDB.dotsDB.DotsStimulus.normalized_dots_frame_generator"><code class="xref py py-func docutils literal notranslate"><span class="pre">DotsStimulus.normalized_dots_frame_generator()</span></code></a></p>
+</div>
+<p class="rubric">Attributes Summary</p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.field_scale" title="dotsDB.dotsDB.DotsStimulus.field_scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_scale</span></code></a></p></td>
+<td><p>scalar by which the drawing aperture is multiplied to define actual pixel space</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.frame_rate" title="dotsDB.dotsDB.DotsStimulus.frame_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">frame_rate</span></code></a></p></td>
+<td><p>rate in Hz at which the stimulus should be interpreted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.interleaves" title="dotsDB.dotsDB.DotsStimulus.interleaves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interleaves</span></code></a></p></td>
+<td><p>size of the cycle of interleaved frames</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.limit_life_time" title="dotsDB.dotsDB.DotsStimulus.limit_life_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">limit_life_time</span></code></a></p></td>
+<td><p>detail</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.export_params" title="dotsDB.dotsDB.DotsStimulus.export_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_params</span></code></a>()</p></td>
+<td><p>export parameters of the stimulus</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.next_frame" title="dotsDB.dotsDB.DotsStimulus.next_frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">next_frame</span></code></a>(present_frame, present_lifetimes)</p></td>
+<td><p>Computes the next frame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.norm_to_pixel_frame" title="dotsDB.dotsDB.DotsStimulus.norm_to_pixel_frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">norm_to_pixel_frame</span></code></a>(normalized_frame)</p></td>
+<td><p>takes a normalized frame of dots as input and returns a pixel frame A dot in normalized coordinates is characterized by a single pair of doubles.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dotsDB.dotsDB.DotsStimulus.normalized_dots_frame_generator" title="dotsDB.dotsDB.DotsStimulus.normalized_dots_frame_generator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalized_dots_frame_generator</span></code></a>([max_frames])</p></td>
+<td><p>Create a <em>generator</em> to generate frames of a random dots stimulus.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="attribute">
+<dt id="dotsDB.dotsDB.DotsStimulus.field_scale">
+<code class="descname">field_scale</code><em class="property"> = 1.1</em><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus.field_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>scalar by which the drawing aperture is multiplied to define actual pixel space</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dotsDB.dotsDB.DotsStimulus.frame_rate">
+<code class="descname">frame_rate</code><em class="property"> = 60</em><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus.frame_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>rate in Hz at which the stimulus should be interpreted</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dotsDB.dotsDB.DotsStimulus.interleaves">
+<code class="descname">interleaves</code><em class="property"> = 3</em><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus.interleaves" title="Permalink to this definition">¶</a></dt>
+<dd><p>size of the cycle of interleaved frames</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dotsDB.dotsDB.DotsStimulus.limit_life_time">
+<code class="descname">limit_life_time</code><em class="property"> = True</em><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus.limit_life_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>detail</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="method">
+<dt id="dotsDB.dotsDB.DotsStimulus.export_params">
+<code class="descname">export_params</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus.export_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>export parameters of the stimulus</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dotsDB.dotsDB.DotsStimulus.next_frame">
+<code class="descname">next_frame</code><span class="sig-paren">(</span><em>present_frame</em>, <em>present_lifetimes</em><span class="sig-paren">)</span><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus.next_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the next frame. This function mimicks dotsDrawableDotKinetogram.computeNextFrame()
+from the <a class="reference external" href="https://github.com/TheGoldLab/Lab_Matlab_Control/blob/eyeDev/snow-dots/classes/drawable/dotsDrawableDotKinetogram.m">MATLAB code</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>present_frame</strong> – normalized frame as handled by self.normalized_dots_frame_generator()</p></li>
+<li><p><strong>present_lifetimes</strong> – numpy array</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tuple (successor frame, new lifetimes)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="dotsDB.dotsDB.DotsStimulus.norm_to_pixel_frame">
+<code class="descname">norm_to_pixel_frame</code><span class="sig-paren">(</span><em>normalized_frame</em><span class="sig-paren">)</span><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus.norm_to_pixel_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>takes a normalized frame of dots as input and returns a pixel frame
+A dot in normalized coordinates is characterized by a single pair of doubles.
+However, in pixel space, a dot is a square patch of pixels.
+Dots falling at the edge of the pixel space are truncated, so not all dots have necessarily the same number of
+active pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>normalized_frame</strong> (<em>ndarray of doubles</em>) – num_dots x 2 array</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>pixel frame represented as an num_pixels x num_pixels ndarray with <a href="#id1"><span class="problematic" id="id2">np.bool_</span></a> entries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="dotsDB.dotsDB.DotsStimulus.normalized_dots_frame_generator">
+<code class="descname">normalized_dots_frame_generator</code><span class="sig-paren">(</span><em>max_frames=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dotsDB.dotsDB.DotsStimulus.normalized_dots_frame_generator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <em>generator</em> to generate frames of a random dots stimulus.</p>
+<p>Each frame is a numpy array with N rows and 2 columns.
+Each row corresponds to the <em>normalized</em> coordinates of a dot: col 1 corresponds to the vertical
+position of the dot, col 2 corresponds to the horizontal position of the dot. For example,
+(0,0) is the top left corner; (.99, .99) is the bottom right corner;
+(0,.5) is a dot positioned at the top row and midway between left and right.
+The first frame of each interleaved sequence is randomly generated</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>1 is not an allowed coordinate, only values in [0,1) are.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>max_frames</strong> – max number of frames to generate (defaults to self.num_frames)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Yields a ‘successor’ frame on each iteration.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>generator</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="dotsDB.dotsDB.write_stimulus_to_file.html" class="btn btn-neutral float-left" title="write_stimulus_to_file" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Adrian Radillo
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
